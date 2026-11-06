@@ -1,0 +1,3122 @@
+        -:    0:Source:test/cmsapitest.c
+        -:    0:Graph:test/cmsapitest-bin-cmsapitest.gcno
+        -:    0:Data:test/cmsapitest-bin-cmsapitest.gcda
+        -:    0:Runs:2
+        -:    1:/*
+        -:    2: * Copyright 2018-2026 The OpenSSL Project Authors. All Rights Reserved.
+        -:    3: *
+        -:    4: * Licensed under the Apache License 2.0 (the "License").  You may not use
+        -:    5: * this file except in compliance with the License.  You can obtain a copy
+        -:    6: * in the file LICENSE in the source distribution or at
+        -:    7: * https://www.openssl.org/source/license.html
+        -:    8: */
+        -:    9:
+        -:   10:#include <stdint.h>
+        -:   11:#include <string.h>
+        -:   12:
+        -:   13:#include <openssl/pem.h>
+        -:   14:#include <openssl/cms.h>
+        -:   15:#include <openssl/bio.h>
+        -:   16:#include <openssl/err.h>
+        -:   17:#include <openssl/x509.h>
+        -:   18:#include <openssl/rsa.h>
+        -:   19:#include <openssl/provider.h>
+        -:   20:#include "../crypto/cms/cms_local.h" /* for d.signedData and d.envelopedData */
+        -:   21:
+        -:   22:#include "testutil.h"
+        -:   23:
+        -:   24:static X509 *cert = NULL;
+        -:   25:static EVP_PKEY *privkey = NULL;
+        -:   26:static X509 *ed448_cert = NULL;
+        -:   27:static EVP_PKEY *ed448_privkey = NULL;
+        -:   28:static X509 *cert2 = NULL;
+        -:   29:static EVP_PKEY *privkey2 = NULL;
+        -:   30:static char *derin = NULL;
+        -:   31:static char *too_long_iv_cms_in = NULL;
+        -:   32:static char *pwri_kek_oob_der_in = NULL;
+        -:   33:static char *pwri_kek_no_iv_in = NULL;
+        -:   34:static char *ec_recip_in = NULL;
+        -:   35:
+        -:   36:/*
+        -:   37: * This is our bad cms data, it contains an AuthEnvelopedData field
+        -:   38: * with a CIPHER OID set to AES-256-OFB
+        -:   39: */
+        -:   40:static const unsigned char bad_cms_der[452] = {
+        -:   41:    0x30, 0x82, 0x01, 0xc0, 0x06, 0x0b, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d,
+        -:   42:    0x01, 0x09, 0x10, 0x01, 0x17, 0xa0, 0x82, 0x01, 0xaf, 0x30, 0x82, 0x01,
+        -:   43:    0xab, 0x02, 0x01, 0x00, 0x31, 0x82, 0x01, 0x44, 0x30, 0x82, 0x01, 0x40,
+        -:   44:    0x02, 0x01, 0x00, 0x30, 0x28, 0x30, 0x10, 0x31, 0x0e, 0x30, 0x0c, 0x06,
+        -:   45:    0x03, 0x55, 0x04, 0x03, 0x0c, 0x05, 0x52, 0x65, 0x63, 0x69, 0x70, 0x02,
+        -:   46:    0x14, 0x1a, 0x5c, 0x04, 0x9b, 0x3a, 0x64, 0xff, 0xd4, 0x63, 0xde, 0x4f,
+        -:   47:    0x90, 0xe5, 0x76, 0xe2, 0x18, 0xe8, 0x5c, 0x9e, 0xd7, 0x30, 0x0d, 0x06,
+        -:   48:    0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00,
+        -:   49:    0x04, 0x82, 0x01, 0x00, 0x18, 0xcf, 0x9f, 0x44, 0x95, 0x79, 0xe9, 0x96,
+        -:   50:    0x7d, 0x0f, 0xd1, 0xb4, 0xc2, 0x38, 0xb0, 0xc9, 0x76, 0xd5, 0xba, 0x08,
+        -:   51:    0x5c, 0xbf, 0xc3, 0x30, 0xea, 0x3a, 0x68, 0xa4, 0xba, 0x99, 0x4c, 0x70,
+        -:   52:    0x97, 0xb8, 0xa9, 0xce, 0x71, 0x4c, 0x54, 0xa3, 0xfd, 0x81, 0x9e, 0x15,
+        -:   53:    0x63, 0xb7, 0x23, 0x46, 0x17, 0x69, 0xaf, 0x8f, 0xbd, 0xa3, 0x54, 0x23,
+        -:   54:    0xf3, 0xf5, 0x35, 0xa8, 0xd4, 0x9c, 0xec, 0xe1, 0x17, 0x2c, 0x6d, 0x0b,
+        -:   55:    0xad, 0xc0, 0xe9, 0x1d, 0xd1, 0x8d, 0x59, 0xd5, 0x29, 0xc6, 0x40, 0xc4,
+        -:   56:    0xcd, 0x4e, 0x87, 0x70, 0x19, 0x5d, 0x88, 0x50, 0xbd, 0x4a, 0x13, 0xb3,
+        -:   57:    0xef, 0x0c, 0x6d, 0x6a, 0xc5, 0x51, 0xbb, 0x5c, 0x39, 0x17, 0xda, 0xb1,
+        -:   58:    0x71, 0x17, 0x88, 0xfb, 0x6a, 0xef, 0x7f, 0x85, 0xa7, 0x04, 0x71, 0xc7,
+        -:   59:    0x83, 0x91, 0xb3, 0x30, 0x1b, 0x3d, 0x18, 0x7f, 0x63, 0xbf, 0x42, 0x7c,
+        -:   60:    0xae, 0x6f, 0xae, 0xa1, 0x17, 0x84, 0xfd, 0x67, 0x2a, 0x4f, 0x4c, 0xe9,
+        -:   61:    0x05, 0x26, 0x2c, 0xd5, 0xab, 0x0c, 0xcf, 0xdc, 0x3f, 0x24, 0xcf, 0x71,
+        -:   62:    0x26, 0x7a, 0x1f, 0xf7, 0xc9, 0x92, 0x5e, 0xb6, 0x3d, 0x7f, 0xc3, 0x08,
+        -:   63:    0xd3, 0xad, 0xc0, 0xc8, 0x4f, 0x42, 0x0c, 0xf3, 0xac, 0x23, 0x11, 0xdf,
+        -:   64:    0x75, 0x84, 0x69, 0x8c, 0xa6, 0x59, 0x43, 0xfb, 0xf7, 0x6b, 0x62, 0xf0,
+        -:   65:    0xf7, 0x35, 0x07, 0xc4, 0xf8, 0xd5, 0x12, 0x4a, 0x16, 0x62, 0xbc, 0x04,
+        -:   66:    0xaa, 0x9a, 0x2e, 0xb2, 0x1a, 0xfa, 0x4c, 0x82, 0xce, 0x9e, 0xa8, 0x6d,
+        -:   67:    0xc1, 0x29, 0x59, 0xe0, 0x33, 0xb5, 0xa6, 0x47, 0x09, 0x2e, 0xbf, 0x60,
+        -:   68:    0xa6, 0xb3, 0x21, 0xa0, 0x15, 0xac, 0x92, 0x29, 0xb5, 0xe6, 0xe0, 0xd4,
+        -:   69:    0x8b, 0xd8, 0x21, 0xe2, 0x17, 0x98, 0xd1, 0x11, 0x5d, 0xc5, 0xae, 0x24,
+        -:   70:    0xe8, 0x92, 0xdb, 0x96, 0xa3, 0x5b, 0x58, 0xa7, 0x30, 0x4c, 0x06, 0x09,
+        -:   71:    0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x07, 0x01, 0x30, 0x1d, 0x06,
+        -:   72:    0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x01, 0x2b, 0x04, 0x10,
+        -:   73:    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        -:   74:    0x00, 0x00, 0x00, 0x00, 0x80, 0x20, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,
+        -:   75:    0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,
+        -:   76:    0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41,
+        -:   77:    0x41, 0x41, 0x04, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        -:   78:    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+        -:   79:};
+        -:   80:
+        -:   81:/*
+        -:   82: * This array represents a der encoded contentinfo structure addressed to
+        -:   83: * servercert.pem, with the tag value of the aes-256-gcm cipher used to encrypt
+        -:   84: * the contents of the mssages down to 1 byte.  Decoding it should fail
+        -:   85: */
+        -:   86:static const unsigned char one_byte_mac_cms_der[423] = {
+        -:   87:    0x30, 0x82, 0x01, 0xa3, 0x06, 0x0b, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d,
+        -:   88:    0x01, 0x09, 0x10, 0x01, 0x17, 0xa0, 0x82, 0x01, 0x92, 0x30, 0x82, 0x01,
+        -:   89:    0x8e, 0x02, 0x01, 0x00, 0x31, 0x82, 0x01, 0x33, 0x30, 0x82, 0x01, 0x2f,
+        -:   90:    0x02, 0x01, 0x00, 0x30, 0x17, 0x30, 0x12, 0x31, 0x10, 0x30, 0x0e, 0x06,
+        -:   91:    0x03, 0x55, 0x04, 0x03, 0x0c, 0x07, 0x52, 0x6f, 0x6f, 0x74, 0x20, 0x43,
+        -:   92:    0x41, 0x02, 0x01, 0x02, 0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86,
+        -:   93:    0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00, 0x04, 0x82, 0x01, 0x00, 0x10,
+        -:   94:    0x3a, 0x8c, 0xee, 0x4e, 0xe2, 0x1f, 0xfe, 0xcc, 0x28, 0x39, 0x9e, 0x46,
+        -:   95:    0xbe, 0xa7, 0xd5, 0x02, 0x2a, 0x53, 0x06, 0x5f, 0x94, 0x6b, 0x69, 0x6d,
+        -:   96:    0x2d, 0xe8, 0x44, 0xa6, 0x43, 0x52, 0x82, 0x89, 0x2d, 0xf1, 0x9b, 0xb9,
+        -:   97:    0x9e, 0xa4, 0x8d, 0x77, 0xf1, 0xd2, 0x8e, 0x86, 0x79, 0x06, 0x3e, 0x90,
+        -:   98:    0xf0, 0xca, 0x9e, 0xb5, 0x35, 0xd5, 0x89, 0xf0, 0x7c, 0x06, 0xa0, 0x91,
+        -:   99:    0xbf, 0xf4, 0x61, 0xaa, 0x5c, 0x99, 0xa3, 0x64, 0x15, 0xfd, 0xf9, 0x90,
+        -:  100:    0xf0, 0xf3, 0x25, 0x5b, 0x48, 0xa1, 0xfb, 0x7a, 0xce, 0x63, 0xdc, 0xa9,
+        -:  101:    0xfe, 0x7c, 0xbe, 0x9c, 0xaa, 0xd3, 0x42, 0x0e, 0x4a, 0xc3, 0x4b, 0x4e,
+        -:  102:    0x76, 0x6d, 0x52, 0x54, 0x85, 0x4e, 0xab, 0x50, 0x2c, 0x5f, 0xc2, 0x8b,
+        -:  103:    0x9f, 0x1f, 0x0f, 0x8a, 0x7c, 0xb3, 0x0a, 0xde, 0x50, 0x9b, 0xef, 0x89,
+        -:  104:    0xf2, 0xea, 0x07, 0xca, 0x11, 0x76, 0x29, 0xaf, 0xe4, 0x59, 0x28, 0x19,
+        -:  105:    0x48, 0x96, 0x67, 0xdd, 0xdd, 0x01, 0xf0, 0x14, 0xbe, 0x3d, 0xa5, 0xa3,
+        -:  106:    0x83, 0x21, 0x39, 0x29, 0xb7, 0x8f, 0xb7, 0xf4, 0x85, 0x05, 0xee, 0xca,
+        -:  107:    0xbb, 0xbd, 0xc0, 0xaf, 0x0d, 0xf1, 0xef, 0x5f, 0x06, 0x05, 0xeb, 0x0e,
+        -:  108:    0x55, 0xf0, 0x7e, 0x13, 0x1a, 0x2a, 0x37, 0xd4, 0xba, 0x26, 0xc8, 0x2e,
+        -:  109:    0x6b, 0xc3, 0xe1, 0xcf, 0x28, 0xab, 0x0d, 0xab, 0xdd, 0xa7, 0xf4, 0xd3,
+        -:  110:    0x59, 0xcd, 0xc7, 0x2d, 0xa1, 0x56, 0x5f, 0x47, 0x77, 0x27, 0x17, 0x71,
+        -:  111:    0xae, 0x75, 0xc8, 0x71, 0x58, 0xf9, 0xab, 0x67, 0xda, 0x23, 0x62, 0xa0,
+        -:  112:    0x6d, 0xe5, 0x2d, 0x06, 0xb8, 0xc0, 0xac, 0xaa, 0x38, 0xa4, 0x0d, 0xb5,
+        -:  113:    0xb2, 0xce, 0xa7, 0x26, 0x0d, 0x3a, 0x88, 0x2f, 0x8d, 0x6c, 0xa0, 0xf6,
+        -:  114:    0x94, 0xf2, 0x2c, 0x37, 0x03, 0xaf, 0x67, 0x5c, 0xf3, 0x2c, 0xfb, 0xe8,
+        -:  115:    0x16, 0x9e, 0x55, 0x30, 0x4f, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7,
+        -:  116:    0x0d, 0x01, 0x07, 0x01, 0x30, 0x1e, 0x06, 0x09, 0x60, 0x86, 0x48, 0x01,
+        -:  117:    0x65, 0x03, 0x04, 0x01, 0x2e, 0x30, 0x11, 0x04, 0x0c, 0x6b, 0x1d, 0xe5,
+        -:  118:    0xb2, 0x38, 0x0e, 0x17, 0x91, 0x9c, 0x9c, 0x40, 0x35, 0x02, 0x01, 0x10,
+        -:  119:    0x80, 0x22, 0xa0, 0x90, 0x75, 0x74, 0xdf, 0x2d, 0xba, 0x4f, 0xce, 0x4e,
+        -:  120:    0x7e, 0x52, 0xb0, 0x2e, 0x5f, 0xe0, 0x84, 0x01, 0xb1, 0x49, 0x0b, 0x69,
+        -:  121:    0xc7, 0x61, 0x63, 0x84, 0x3a, 0xfc, 0xaa, 0x86, 0xfc, 0x96, 0x4e, 0x6c,
+        -:  122:    0x04, 0x01, 0x92
+        -:  123:};
+        -:  124:
+function test_short_mac_on_auth_envelope_data called 2 returned 100% blocks executed 79%
+        2:  125:static int test_short_mac_on_auth_envelope_data(void)
+        -:  126:{
+        -:  127:    int ret = 0;
+        2:  128:    const unsigned char *derptr = one_byte_mac_cms_der;
+        2:  129:    BIO *outmsgbio = BIO_new(BIO_s_mem());
+call    0 returned 2
+call    1 returned 2
+        2:  130:    CMS_ContentInfo *content = d2i_CMS_ContentInfo(NULL, &derptr, OSSL_NELEM(one_byte_mac_cms_der));
+call    0 returned 2
+        -:  131:
+        2:  132:    if (!TEST_ptr(content))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####:  133:        goto end;
+        -:  134:
+        -:  135:    /*
+        -:  136:     * We expect this to fail, as the tag value in the authEnvelopedData parameter is
+        -:  137:     * a single byte
+        -:  138:     */
+        2:  139:    if (!TEST_false(CMS_decrypt(content, privkey, cert, NULL, outmsgbio, CMS_TEXT)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  140:        goto end;
+        -:  141:
+        -:  142:    ret = 1;
+        2:  143:end:
+        2:  144:    BIO_free(outmsgbio);
+call    0 returned 2
+        2:  145:    CMS_ContentInfo_free(content);
+call    0 returned 2
+        2:  146:    return ret;
+        -:  147:}
+        -:  148:
+function test_non_aead_on_auth_envelope_dec called 2 returned 100% blocks executed 79%
+        2:  149:static int test_non_aead_on_auth_envelope_dec(void)
+        -:  150:{
+        -:  151:    int ret = 0;
+        2:  152:    const unsigned char *derptr = bad_cms_der;
+        2:  153:    BIO *outmsgbio = BIO_new(BIO_s_mem());
+call    0 returned 2
+call    1 returned 2
+        2:  154:    CMS_ContentInfo *content = d2i_CMS_ContentInfo(NULL, &derptr, OSSL_NELEM(bad_cms_der));
+call    0 returned 2
+        -:  155:
+        2:  156:    if (!TEST_ptr(content))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####:  157:        goto end;
+        -:  158:
+        -:  159:    /*
+        -:  160:     * We expect this to fail
+        -:  161:     */
+        2:  162:    if (!TEST_false(CMS_decrypt(content, privkey, cert, NULL, outmsgbio,
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+        -:  163:            CMS_TEXT)))
+    #####:  164:        goto end;
+        -:  165:
+        -:  166:    ret = 1;
+        2:  167:end:
+        2:  168:    BIO_free(outmsgbio);
+call    0 returned 2
+        2:  169:    CMS_ContentInfo_free(content);
+call    0 returned 2
+        2:  170:    return ret;
+        -:  171:}
+        -:  172:
+function test_non_aead_on_auth_envelope_enc called 2 returned 100% blocks executed 84%
+        2:  173:static int test_non_aead_on_auth_envelope_enc(void)
+        -:  174:{
+        -:  175:    CMS_ContentInfo *content = NULL;
+        2:  176:    STACK_OF(X509) *certstack = sk_X509_new_null();
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+call    3 returned 2
+        2:  177:    const EVP_CIPHER *cipher = EVP_aes_128_cbc();
+call    0 returned 2
+        -:  178:    const char *msg = "Hello world";
+        2:  179:    BIO *msgbio = BIO_new_mem_buf(msg, (int)strlen(msg));
+call    0 returned 2
+        2:  180:    BIO *outmsgbio = BIO_new(BIO_s_mem());
+call    0 returned 2
+call    1 returned 2
+        -:  181:    X509 *recip;
+        -:  182:    int i;
+        -:  183:    int ret = 0;
+        -:  184:
+        2:  185:    if (!TEST_ptr(certstack) || !TEST_ptr(msgbio) || !TEST_ptr(outmsgbio))
+call    0 returned 2
+branch  1 taken 2 (fallthrough)
+branch  2 taken 0
+call    3 returned 2
+branch  4 taken 2 (fallthrough)
+branch  5 taken 0
+call    6 returned 2
+branch  7 taken 0 (fallthrough)
+branch  8 taken 2
+    #####:  186:        goto end;
+        -:  187:
+        2:  188:    if (!TEST_int_gt(sk_X509_push(certstack, cert), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  189:        goto end;
+        -:  190:
+        -:  191:    /*
+        -:  192:     * Emulate CMS_encrypt here, but use a non AEAD cipher
+        -:  193:     */
+        2:  194:    content = CMS_AuthEnvelopedData_create_ex(cipher, NULL, NULL);
+call    0 returned 2
+        -:  195:
+        2:  196:    if (!TEST_ptr(content))
+call    0 returned 2
+branch  1 taken 2 (fallthrough)
+branch  2 taken 0
+    #####:  197:        goto end;
+        -:  198:
+        4:  199:    for (i = 0; i < sk_X509_num(certstack); i++) {
+call    0 returned 4
+branch  1 taken 2
+branch  2 taken 2 (fallthrough)
+        2:  200:        recip = sk_X509_value(certstack, i);
+call    0 returned 2
+        2:  201:        if (!TEST_ptr(CMS_add1_recipient_cert(content, recip, CMS_TEXT)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  202:            goto end;
+        -:  203:    }
+        -:  204:
+        -:  205:    /*
+        -:  206:     * We expect this to fail as we are using a non-AEAD cipher on
+        -:  207:     * AuthEnvelopedData
+        -:  208:     */
+        2:  209:    if (!TEST_int_eq(CMS_final(content, msgbio, NULL, CMS_TEXT), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  210:        goto end;
+        -:  211:
+        -:  212:    ret = 1;
+        2:  213:end:
+        2:  214:    sk_X509_free(certstack);
+call    0 returned 2
+        2:  215:    BIO_free(msgbio);
+call    0 returned 2
+        2:  216:    BIO_free(outmsgbio);
+call    0 returned 2
+        2:  217:    CMS_ContentInfo_free(content);
+call    0 returned 2
+        2:  218:    return ret;
+        -:  219:}
+        -:  220:
+function test_encrypt_decrypt called 10 returned 100% blocks executed 82%
+       10:  221:static int test_encrypt_decrypt(const EVP_CIPHER *cipher)
+        -:  222:{
+        -:  223:    int testresult = 0;
+       10:  224:    STACK_OF(X509) *certstack = sk_X509_new_null();
+call    0 returned 10
+call    1 returned 10
+call    2 returned 10
+call    3 returned 10
+        -:  225:    const char *msg = "Hello world";
+       10:  226:    BIO *msgbio = BIO_new_mem_buf(msg, (int)strlen(msg));
+call    0 returned 10
+       10:  227:    BIO *outmsgbio = BIO_new(BIO_s_mem());
+call    0 returned 10
+call    1 returned 10
+        -:  228:    CMS_ContentInfo *content = NULL;
+        -:  229:    BIO *contentbio = NULL;
+        -:  230:    char buf[80];
+        -:  231:
+       10:  232:    if (!TEST_ptr(certstack) || !TEST_ptr(msgbio) || !TEST_ptr(outmsgbio))
+call    0 returned 10
+branch  1 taken 10 (fallthrough)
+branch  2 taken 0
+call    3 returned 10
+branch  4 taken 10 (fallthrough)
+branch  5 taken 0
+call    6 returned 10
+branch  7 taken 0 (fallthrough)
+branch  8 taken 10
+    #####:  233:        goto end;
+        -:  234:
+       10:  235:    if (!TEST_int_gt(sk_X509_push(certstack, cert), 0))
+call    0 returned 10
+call    1 returned 10
+branch  2 taken 0 (fallthrough)
+branch  3 taken 10
+    #####:  236:        goto end;
+        -:  237:
+       10:  238:    content = CMS_encrypt(certstack, msgbio, cipher, CMS_TEXT);
+call    0 returned 10
+       10:  239:    if (!TEST_ptr(content))
+call    0 returned 10
+branch  1 taken 0 (fallthrough)
+branch  2 taken 10
+    #####:  240:        goto end;
+        -:  241:
+       10:  242:    if (!TEST_true(CMS_decrypt(content, privkey, cert, NULL, outmsgbio,
+call    0 returned 10
+call    1 returned 10
+branch  2 taken 0 (fallthrough)
+branch  3 taken 10
+        -:  243:            CMS_TEXT)))
+    #####:  244:        goto end;
+        -:  245:
+       10:  246:    if (!(EVP_CIPHER_get_flags(cipher) & EVP_CIPH_FLAG_AEAD_CIPHER)
+call    0 returned 10
+branch  1 taken 4 (fallthrough)
+branch  2 taken 6
+        4:  247:        && !TEST_ptr(contentbio = CMS_EnvelopedData_decrypt(content->d.envelopedData,
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0 (fallthrough)
+branch  3 taken 4
+        -:  248:                         NULL, privkey, cert, NULL,
+        -:  249:                         CMS_TEXT, NULL, NULL)))
+    #####:  250:        goto end;
+        -:  251:
+        -:  252:    /* Check we got the message we first started with */
+       10:  253:    if (!TEST_int_eq(BIO_gets(outmsgbio, buf, sizeof(buf)), (int)strlen(msg))
+call    0 returned 10
+call    1 returned 10
+branch  2 taken 10 (fallthrough)
+branch  3 taken 0
+       10:  254:        || !TEST_int_eq(strcmp(buf, msg), 0))
+call    0 returned 10
+branch  1 taken 0 (fallthrough)
+branch  2 taken 10
+    #####:  255:        goto end;
+        -:  256:
+        -:  257:    testresult = 1;
+       10:  258:end:
+       10:  259:    BIO_free(contentbio);
+call    0 returned 10
+       10:  260:    sk_X509_free(certstack);
+call    0 returned 10
+       10:  261:    BIO_free(msgbio);
+call    0 returned 10
+       10:  262:    BIO_free(outmsgbio);
+call    0 returned 10
+       10:  263:    CMS_ContentInfo_free(content);
+call    0 returned 10
+        -:  264:
+       10:  265:    return testresult && TEST_int_eq(ERR_peek_error(), 0);
+branch  0 taken 10 (fallthrough)
+branch  1 taken 0
+call    2 returned 10
+call    3 returned 10
+branch  4 taken 0 (fallthrough)
+branch  5 taken 10
+        -:  266:}
+        -:  267:
+function test_encrypt_decrypt_aes_cbc called 2 returned 100% blocks executed 100%
+        2:  268:static int test_encrypt_decrypt_aes_cbc(void)
+        -:  269:{
+        2:  270:    return test_encrypt_decrypt(EVP_aes_128_cbc());
+call    0 returned 2
+call    1 returned 2
+        -:  271:}
+        -:  272:
+function test_encrypt_decrypt_aes_cfb called 2 returned 100% blocks executed 100%
+        2:  273:static int test_encrypt_decrypt_aes_cfb(void)
+        -:  274:{
+        2:  275:    return test_encrypt_decrypt(EVP_aes_128_cfb());
+call    0 returned 2
+call    1 returned 2
+        -:  276:}
+        -:  277:
+function test_encrypt_decrypt_aes_128_gcm called 2 returned 100% blocks executed 100%
+        2:  278:static int test_encrypt_decrypt_aes_128_gcm(void)
+        -:  279:{
+        2:  280:    return test_encrypt_decrypt(EVP_aes_128_gcm());
+call    0 returned 2
+call    1 returned 2
+        -:  281:}
+        -:  282:
+function test_encrypt_rejects_ambiguous_cfb_oid called 2 returned 100% blocks executed 90%
+        2:  283:static int test_encrypt_rejects_ambiguous_cfb_oid(void)
+        -:  284:{
+       12:  285:    const EVP_CIPHER *ciphers[] = {
+        2:  286:        EVP_aes_128_cfb1(), EVP_aes_128_cfb8(),
+call    0 returned 2
+call    1 returned 2
+        2:  287:        EVP_aes_192_cfb1(), EVP_aes_192_cfb8(),
+call    0 returned 2
+call    1 returned 2
+        2:  288:        EVP_aes_256_cfb1(), EVP_aes_256_cfb8()
+call    0 returned 2
+call    1 returned 2
+        -:  289:    };
+        -:  290:    static const char msg[] = "CMS CFB content";
+        -:  291:    STACK_OF(X509) *recips = NULL;
+        -:  292:    BIO *in = NULL;
+        -:  293:    CMS_ContentInfo *cms = NULL;
+        -:  294:    size_t i;
+        -:  295:    int ret = 0;
+        -:  296:
+        2:  297:    if (!TEST_ptr(recips = sk_X509_new_null())
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+call    3 returned 2
+call    4 returned 2
+branch  5 taken 2 (fallthrough)
+branch  6 taken 0
+        2:  298:        || !TEST_int_gt(sk_X509_push(recips, cert), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  299:        || !TEST_ptr(in = BIO_new_mem_buf(msg, sizeof(msg) - 1)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+    #####:  300:        goto end;
+        -:  301:
+       14:  302:    for (i = 0; i < OSSL_NELEM(ciphers); i++) {
+branch  0 taken 12
+branch  1 taken 2 (fallthrough)
+       12:  303:        ERR_clear_error();
+call    0 returned 12
+       12:  304:        cms = CMS_encrypt(recips, in, ciphers[i], CMS_BINARY);
+call    0 returned 12
+       12:  305:        if (!TEST_ptr_null(cms)
+call    0 returned 12
+branch  1 taken 12 (fallthrough)
+branch  2 taken 0
+       24:  306:            || !TEST_int_eq(ERR_GET_REASON(ERR_peek_error()) & ERR_REASON_MASK,
+call    0 returned 12
+call    1 returned 12
+branch  2 taken 0 (fallthrough)
+branch  3 taken 12
+        -:  307:                CMS_R_UNSUPPORTED_CONTENT_ENCRYPTION_ALGORITHM))
+    #####:  308:            goto end;
+        -:  309:    }
+        -:  310:
+        -:  311:    ret = 1;
+        2:  312:end:
+        2:  313:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2:  314:    BIO_free(in);
+call    0 returned 2
+        2:  315:    sk_X509_free(recips);
+call    0 returned 2
+        2:  316:    ERR_clear_error();
+call    0 returned 2
+        2:  317:    return ret;
+        -:  318:}
+        -:  319:
+function test_encrypt_decrypt_aes_192_gcm called 2 returned 100% blocks executed 100%
+        2:  320:static int test_encrypt_decrypt_aes_192_gcm(void)
+        -:  321:{
+        2:  322:    return test_encrypt_decrypt(EVP_aes_192_gcm());
+call    0 returned 2
+call    1 returned 2
+        -:  323:}
+        -:  324:
+function test_encrypt_decrypt_aes_256_gcm called 2 returned 100% blocks executed 100%
+        2:  325:static int test_encrypt_decrypt_aes_256_gcm(void)
+        -:  326:{
+        2:  327:    return test_encrypt_decrypt(EVP_aes_256_gcm());
+call    0 returned 2
+call    1 returned 2
+        -:  328:}
+        -:  329:
+function smimecap_has_nid called 12 returned 100% blocks executed 100%
+       12:  330:static int smimecap_has_nid(STACK_OF(X509_ALGOR) *smcap, int nid)
+        -:  331:{
+        -:  332:    int i;
+        -:  333:
+       42:  334:    for (i = 0; i < sk_X509_ALGOR_num(smcap); i++) {
+call    0 returned 42
+branch  1 taken 36
+branch  2 taken 6 (fallthrough)
+       36:  335:        X509_ALGOR *alg = sk_X509_ALGOR_value(smcap, i);
+call    0 returned 36
+       36:  336:        if (OBJ_obj2nid(alg->algorithm) == nid)
+call    0 returned 36
+branch  1 taken 30 (fallthrough)
+branch  2 taken 6
+        -:  337:            return 1;
+        -:  338:    }
+        -:  339:    return 0;
+        -:  340:}
+        -:  341:
+function test_CMS_add_standard_smimecap_ex called 2 returned 100% blocks executed 87%
+        2:  342:static int test_CMS_add_standard_smimecap_ex(void)
+        -:  343:{
+        2:  344:    STACK_OF(X509_ALGOR) *smcap = NULL;
+        -:  345:    int ret = 0;
+        -:  346:
+        2:  347:    if (!TEST_true(CMS_add_standard_smimecap_ex(&smcap, NULL, NULL))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  348:        || !TEST_int_eq(ERR_peek_error(), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  349:        goto end;
+        -:  350:
+        -:  351:    /* AES ciphers must be present with the default provider */
+        2:  352:    if (!TEST_true(smimecap_has_nid(smcap, NID_aes_256_cbc))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  353:        || !TEST_true(smimecap_has_nid(smcap, NID_aes_192_cbc))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  354:        || !TEST_true(smimecap_has_nid(smcap, NID_aes_128_cbc)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  355:        goto end;
+        -:  356:
+        -:  357:    /* RC2, DES, and GOST must NOT be present with just the default provider */
+        2:  358:    if (!TEST_false(smimecap_has_nid(smcap, NID_rc2_cbc))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  359:        || !TEST_false(smimecap_has_nid(smcap, NID_des_cbc))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  360:        || !TEST_false(smimecap_has_nid(smcap, NID_id_Gost28147_89)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  361:        goto end;
+        -:  362:
+        -:  363:    ret = 1;
+        2:  364:end:
+        2:  365:    sk_X509_ALGOR_pop_free(smcap, X509_ALGOR_free);
+call    0 returned 2
+        2:  366:    return ret;
+        -:  367:}
+        -:  368:
+function test_decrypt_with_wrong_key called 2 returned 100% blocks executed 82%
+        2:  369:static int test_decrypt_with_wrong_key(void)
+        -:  370:{
+        -:  371:    int testresult = 0;
+        2:  372:    STACK_OF(X509) *certstack = sk_X509_new_null();
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+call    3 returned 2
+        -:  373:    const char *msg = "Hello world";
+        2:  374:    BIO *msgbio = BIO_new_mem_buf(msg, (int)strlen(msg));
+call    0 returned 2
+        -:  375:    BIO *outmsgbio;
+        -:  376:    CMS_ContentInfo *content = NULL;
+        -:  377:    BIO *contentbio = NULL;
+        2:  378:    const EVP_CIPHER *cipher = EVP_aes_128_cbc();
+call    0 returned 2
+        -:  379:
+        2:  380:    if (!TEST_ptr(certstack) || !TEST_ptr(msgbio))
+call    0 returned 2
+branch  1 taken 2 (fallthrough)
+branch  2 taken 0
+call    3 returned 2
+branch  4 taken 0 (fallthrough)
+branch  5 taken 2
+    #####:  381:        goto end;
+        -:  382:
+        2:  383:    if (!TEST_int_gt(sk_X509_push(certstack, cert), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  384:        goto end;
+        -:  385:
+        2:  386:    content = CMS_encrypt(certstack, msgbio, cipher, 0);
+call    0 returned 2
+        2:  387:    if (!TEST_ptr(content))
+call    0 returned 2
+branch  1 taken 2 (fallthrough)
+branch  2 taken 0
+    #####:  388:        goto end;
+        -:  389:
+     2002:  390:    for (int i = 0; i < 1000; ++i) {
+branch  0 taken 2000
+branch  1 taken 2 (fallthrough)
+     2000:  391:        outmsgbio = BIO_new(BIO_s_mem());
+call    0 returned 2000
+call    1 returned 2000
+     2000:  392:        if (!TEST_false(CMS_decrypt(content, privkey2, cert, NULL, outmsgbio,
+call    0 returned 2000
+call    1 returned 2000
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2000
+        -:  393:                            0)
+        -:  394:                == 1)) {
+    #####:  395:            BIO_free(outmsgbio);
+call    0 never executed
+    #####:  396:            goto end;
+        -:  397:        }
+     2000:  398:        BIO_free(outmsgbio);
+call    0 returned 2000
+        -:  399:    }
+        -:  400:
+        2:  401:    ERR_clear_error();
+call    0 returned 2
+        -:  402:
+        -:  403:    testresult = 1;
+        2:  404:end:
+        2:  405:    BIO_free(contentbio);
+call    0 returned 2
+        2:  406:    sk_X509_free(certstack);
+call    0 returned 2
+        2:  407:    BIO_free(msgbio);
+call    0 returned 2
+        2:  408:    CMS_ContentInfo_free(content);
+call    0 returned 2
+        -:  409:
+        2:  410:    return testresult;
+        -:  411:}
+        -:  412:
+        -:  413:/* Exercise the key-length filter through both decryption API sequences. */
+function test_decrypt_key_length called 16 returned 100% blocks executed 89%
+       16:  414:static int test_decrypt_key_length(int idx)
+        -:  415:{
+        -:  416:    static const char msg[] = "CMS content key length check";
+        -:  417:    static const unsigned char wrongkey[17] = { 0 };
+       16:  418:    const EVP_CIPHER *cipher = EVP_aes_128_gcm();
+call    0 returned 16
+        -:  419:    OSSL_PROVIDER *legacy = NULL;
+        -:  420:    STACK_OF(X509) *recips = NULL;
+        -:  421:    CMS_ContentInfo *cms = NULL, *decoded = NULL;
+        -:  422:    CMS_RecipientInfo *ri;
+        -:  423:    EVP_PKEY_CTX *pctx = NULL;
+        -:  424:    X509 *second = NULL;
+        -:  425:    BIO *in = NULL, *out = NULL;
+        -:  426:    unsigned char *ek = NULL;
+       16:  427:    size_t eklen = 0;
+        -:  428:    char *plaintext;
+        -:  429:    long plaintextlen;
+        -:  430:    int ret = 0, run, staged = idx % 2;
+        -:  431:
+       16:  432:    if (idx / 2 != 0) {
+branch  0 taken 12 (fallthrough)
+branch  1 taken 4
+       12:  433:        if (idx / 2 == 3) {
+branch  0 taken 4 (fallthrough)
+branch  1 taken 8
+        -:  434:#ifndef OPENSSL_NO_RC4
+        4:  435:            cipher = EVP_rc4_40();
+call    0 returned 4
+        -:  436:#else
+        -:  437:            return TEST_skip("RC4 is disabled");
+        -:  438:#endif
+        -:  439:        } else {
+        -:  440:#ifndef OPENSSL_NO_RC2
+        8:  441:            cipher = idx / 2 == 1 ? EVP_rc2_40_cbc() : EVP_rc2_64_cbc();
+branch  0 taken 4 (fallthrough)
+branch  1 taken 4
+call    2 returned 4
+call    3 returned 4
+        -:  442:#else
+        -:  443:            return TEST_skip("RC2 is disabled");
+        -:  444:#endif
+        -:  445:        }
+       12:  446:        legacy = OSSL_PROVIDER_try_load(NULL, "legacy", 1);
+call    0 returned 12
+       12:  447:        if (legacy == NULL) {
+branch  0 taken 6 (fallthrough)
+branch  1 taken 6
+        6:  448:            ERR_clear_error();
+call    0 returned 6
+        6:  449:            return TEST_skip("The legacy provider is unavailable");
+call    0 returned 6
+        -:  450:        }
+        -:  451:    }
+        -:  452:
+       10:  453:    if (!TEST_ptr(recips = sk_X509_new_null())
+call    0 returned 10
+call    1 returned 10
+call    2 returned 10
+call    3 returned 10
+call    4 returned 10
+branch  5 taken 0 (fallthrough)
+branch  6 taken 10
+       10:  454:        || !TEST_int_gt(sk_X509_push(recips, cert), 0)
+call    0 returned 10
+call    1 returned 10
+branch  2 taken 0
+branch  3 taken 10 (fallthrough)
+       10:  455:        || !TEST_ptr(in = BIO_new_mem_buf(msg, sizeof(msg) - 1))
+call    0 returned 10
+call    1 returned 10
+branch  2 taken 10 (fallthrough)
+branch  3 taken 0
+       10:  456:        || !TEST_ptr(cms = CMS_encrypt(recips, in, cipher, CMS_BINARY)))
+call    0 returned 10
+call    1 returned 10
+branch  2 taken 0 (fallthrough)
+branch  3 taken 10
+    #####:  457:        goto end;
+        -:  458:
+       10:  459:    if (idx / 2 == 0) {
+branch  0 taken 4 (fallthrough)
+branch  1 taken 6
+        -:  460:        /* Keep the valid AES key when a later recipient has the wrong length. */
+        4:  461:        if (!TEST_ptr(second = X509_dup(cert))
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0 (fallthrough)
+branch  3 taken 4
+        4:  462:            || !TEST_true(ASN1_INTEGER_set(X509_get_serialNumber(second),
+call    0 returned 4
+call    1 returned 4
+call    2 returned 4
+call    3 returned 4
+call    4 returned 4
+branch  5 taken 0
+branch  6 taken 4 (fallthrough)
+        -:  463:                ASN1_INTEGER_get(X509_get0_serialNumber(cert)) + 1))
+        4:  464:            || !TEST_ptr(ri = CMS_add1_recipient_cert(cms, second, 0))
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0
+branch  3 taken 4 (fallthrough)
+        4:  465:            || !TEST_ptr(pctx = EVP_PKEY_CTX_new_from_pkey(NULL,
+call    0 returned 4
+call    1 returned 4
+call    2 returned 4
+branch  3 taken 0 (fallthrough)
+branch  4 taken 4
+        -:  466:                             X509_get0_pubkey(cert), NULL))
+        4:  467:            || !TEST_int_gt(EVP_PKEY_encrypt_init(pctx), 0)
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0
+branch  3 taken 4 (fallthrough)
+        4:  468:            || !TEST_int_gt(EVP_PKEY_CTX_set_rsa_padding(pctx, RSA_PKCS1_PADDING), 0)
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0
+branch  3 taken 4 (fallthrough)
+        4:  469:            || !TEST_int_gt(EVP_PKEY_encrypt(pctx, NULL, &eklen,
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0
+branch  3 taken 4 (fallthrough)
+        -:  470:                                wrongkey, sizeof(wrongkey)),
+        -:  471:                0)
+        4:  472:            || !TEST_ptr(ek = OPENSSL_malloc(eklen))
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0 (fallthrough)
+branch  3 taken 4
+        4:  473:            || !TEST_int_gt(EVP_PKEY_encrypt(pctx, ek, &eklen,
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0
+branch  3 taken 4 (fallthrough)
+        -:  474:                                wrongkey, sizeof(wrongkey)),
+        -:  475:                0)
+        4:  476:            || !TEST_true(ASN1_OCTET_STRING_set(ri->d.ktri->encryptedKey,
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0
+branch  3 taken 4
+        -:  477:                ek, (int)eklen)))
+    #####:  478:            goto end;
+        -:  479:    }
+        -:  480:
+        -:  481:    /* Start from a decoded object, with the genuine recipient ordered first. */
+       10:  482:    if (!TEST_ptr(decoded = ASN1_item_dup(ASN1_ITEM_rptr(CMS_ContentInfo), cms)))
+call    0 returned 10
+call    1 returned 10
+call    2 returned 10
+branch  3 taken 0 (fallthrough)
+branch  4 taken 10
+    #####:  483:        goto end;
+       10:  484:    ri = sk_CMS_RecipientInfo_value(CMS_get0_RecipientInfos(decoded), 0);
+call    0 returned 10
+call    1 returned 10
+       10:  485:    if (!TEST_int_eq(CMS_RecipientInfo_ktri_cert_cmp(ri, cert), 0))
+call    0 returned 10
+call    1 returned 10
+branch  2 taken 0 (fallthrough)
+branch  3 taken 10
+    #####:  486:        goto end;
+        -:  487:
+       30:  488:    for (run = 0; run < 2; run++) {
+branch  0 taken 20
+branch  1 taken 10 (fallthrough)
+       20:  489:        if (!TEST_ptr(out = BIO_new(BIO_s_mem())))
+call    0 returned 20
+call    1 returned 20
+call    2 returned 20
+branch  3 taken 0 (fallthrough)
+branch  4 taken 20
+    #####:  490:            goto end;
+       20:  491:        if (staged) {
+branch  0 taken 10 (fallthrough)
+branch  1 taken 10
+       10:  492:            if (!TEST_true(CMS_decrypt_set1_pkey(decoded, privkey, NULL))
+call    0 returned 10
+call    1 returned 10
+branch  2 taken 10 (fallthrough)
+branch  3 taken 0
+       10:  493:                || !TEST_true(CMS_decrypt(decoded, NULL, NULL, NULL,
+call    0 returned 10
+call    1 returned 10
+branch  2 taken 0 (fallthrough)
+branch  3 taken 10
+        -:  494:                    out, CMS_BINARY)))
+    #####:  495:                goto end;
+       10:  496:        } else if (!TEST_true(CMS_decrypt(decoded, privkey, NULL, NULL,
+call    0 returned 10
+call    1 returned 10
+branch  2 taken 0 (fallthrough)
+branch  3 taken 10
+        -:  497:                       out, CMS_BINARY))) {
+    #####:  498:            goto end;
+        -:  499:        }
+       20:  500:        plaintextlen = BIO_get_mem_data(out, &plaintext);
+call    0 returned 20
+       20:  501:        if (!TEST_mem_eq(plaintext, plaintextlen, msg, sizeof(msg) - 1))
+call    0 returned 20
+branch  1 taken 0 (fallthrough)
+branch  2 taken 20
+    #####:  502:            goto end;
+       20:  503:        BIO_free(out);
+call    0 returned 20
+        -:  504:        out = NULL;
+        -:  505:    }
+        -:  506:    ret = 1;
+       10:  507:end:
+       10:  508:    BIO_free(in);
+call    0 returned 10
+       10:  509:    BIO_free(out);
+call    0 returned 10
+       10:  510:    CMS_ContentInfo_free(cms);
+call    0 returned 10
+       10:  511:    CMS_ContentInfo_free(decoded);
+call    0 returned 10
+       10:  512:    sk_X509_free(recips);
+call    0 returned 10
+       10:  513:    X509_free(second);
+call    0 returned 10
+       10:  514:    EVP_PKEY_CTX_free(pctx);
+call    0 returned 10
+       10:  515:    OPENSSL_free(ek);
+call    0 returned 10
+       10:  516:    OSSL_PROVIDER_unload(legacy);
+call    0 returned 10
+       10:  517:    return ret;
+        -:  518:}
+        -:  519:
+function test_CMS_add1_cert called 2 returned 100% blocks executed 92%
+        2:  520:static int test_CMS_add1_cert(void)
+        -:  521:{
+        -:  522:    CMS_ContentInfo *cms = NULL;
+        -:  523:    int ret = 0;
+        -:  524:
+        2:  525:    ret = TEST_ptr(cms = CMS_ContentInfo_new())
+call    0 returned 2
+call    1 returned 2
+        2:  526:        && TEST_ptr(CMS_add1_signer(cms, cert, privkey, NULL, 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+        4:  527:        && TEST_true(CMS_add1_cert(cms, cert)); /* add cert again */
+branch  0 taken 2 (fallthrough)
+branch  1 taken 0
+call    2 returned 2
+call    3 returned 2
+branch  4 taken 0
+branch  5 taken 2 (fallthrough)
+        -:  528:
+        2:  529:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2:  530:    return ret;
+        -:  531:}
+        -:  532:
+function test_CMS_SignerInfo_verify_sigalg_oid called 2 returned 100% blocks executed 85%
+        2:  533:static int test_CMS_SignerInfo_verify_sigalg_oid(void)
+        -:  534:{
+        -:  535:    static const char msg[] = "Hello World!\r\n";
+        -:  536:    BIO *msgbio = NULL;
+        -:  537:    CMS_ContentInfo *cms = NULL;
+        -:  538:    CMS_SignerInfo *si;
+        2:  539:    X509_ALGOR *dalg = NULL;
+        -:  540:    int ret = 0;
+        -:  541:
+        2:  542:    if (!TEST_ptr(msgbio = BIO_new_mem_buf(msg, sizeof(msg) - 1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  543:        || !TEST_ptr(cms = CMS_sign(NULL, NULL, NULL, NULL, CMS_PARTIAL))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+        2:  544:        || !TEST_ptr(si = CMS_add1_signer(cms, cert, privkey, EVP_sha256(), 0))
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 0
+branch  4 taken 2 (fallthrough)
+        2:  545:        || !TEST_true(CMS_final(cms, msgbio, NULL, 0)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0
+branch  3 taken 2
+    #####:  546:        goto end;
+        -:  547:
+        2:  548:    if (!TEST_int_gt(CMS_SignerInfo_verify(si), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  549:        goto end;
+        -:  550:
+        -:  551:    /* A signature algorithm OID as digestAlgorithm must not verify */
+        2:  552:    CMS_SignerInfo_get0_algs(si, NULL, NULL, &dalg, NULL);
+call    0 returned 2
+        2:  553:    if (!TEST_true(X509_ALGOR_set0(dalg,
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 2 (fallthrough)
+branch  4 taken 0
+        -:  554:            OBJ_nid2obj(NID_sha256WithRSAEncryption),
+        -:  555:            V_ASN1_UNDEF, NULL))
+        2:  556:        || !TEST_int_le(CMS_SignerInfo_verify(si), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  557:        goto end;
+        -:  558:
+        -:  559:    ret = 1;
+        2:  560:end:
+        2:  561:    ERR_clear_error();
+call    0 returned 2
+        2:  562:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2:  563:    BIO_free(msgbio);
+call    0 returned 2
+        2:  564:    return ret;
+        -:  565:}
+        -:  566:
+        -:  567:/*
+        -:  568: * Regression test for GH #32612: when CMS_verify() bails out early because a
+        -:  569: * signer certificate cannot be found, every SignerInfo must report
+        -:  570: * CMS_VERIFY_RESULT == 0.  A two-signer message with no embedded certificates,
+        -:  571: * verified against an empty store, used to leave the trailing signer(s) at 1
+        -:  572: * ("so far, fine") because the cleanup loop only reset the first 'scount'
+        -:  573: * (== signers whose cert was found == 0 here) entries.
+        -:  574: */
+function test_CMS_verify_result_no_signer_cert called 2 returned 100% blocks executed 87%
+        2:  575:static int test_CMS_verify_result_no_signer_cert(void)
+        -:  576:{
+        -:  577:    CMS_ContentInfo *cms = NULL, *cms2 = NULL;
+        -:  578:    BIO *in = NULL, *out = NULL, *der = NULL;
+        -:  579:    X509_STORE *store = NULL;
+        -:  580:    STACK_OF(CMS_SignerInfo) *sinfos;
+        -:  581:    const unsigned char *p;
+        2:  582:    unsigned char *derbuf = NULL;
+        -:  583:    long derlen;
+        -:  584:    int i, ret = 0;
+        -:  585:
+        2:  586:    if (!TEST_ptr(in = BIO_new_mem_buf("Hello World\n", -1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  587:        || !TEST_ptr(out = BIO_new(BIO_s_mem()))
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 2 (fallthrough)
+branch  4 taken 0
+        2:  588:        || !TEST_ptr(der = BIO_new(BIO_s_mem()))
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 2 (fallthrough)
+branch  4 taken 0
+        2:  589:        || !TEST_ptr(store = X509_STORE_new()))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  590:        goto end;
+        -:  591:
+        -:  592:    /* two signers, neither certificate embedded */
+        2:  593:    if (!TEST_ptr(cms = CMS_sign(NULL, NULL, NULL, in,
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        -:  594:                      CMS_BINARY | CMS_PARTIAL | CMS_NOCERTS))
+        2:  595:        || !TEST_ptr(CMS_add1_signer(cms, cert, privkey, NULL, CMS_NOCERTS))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  596:        || !TEST_ptr(CMS_add1_signer(cms, cert, privkey, NULL, CMS_NOCERTS))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  597:        || !TEST_true(CMS_final(cms, in, NULL, CMS_BINARY)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  598:        goto end;
+        -:  599:
+        -:  600:    /* round-trip through DER so no in-memory signer cert pointers linger */
+        2:  601:    if (!TEST_true(i2d_CMS_bio(der, cms)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  602:        goto end;
+        2:  603:    derlen = BIO_get_mem_data(der, &derbuf);
+call    0 returned 2
+        2:  604:    p = derbuf;
+        2:  605:    if (!TEST_ptr(cms2 = d2i_CMS_ContentInfo(NULL, &p, derlen)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  606:        goto end;
+        -:  607:
+        2:  608:    ERR_clear_error();
+call    0 returned 2
+        2:  609:    if (!TEST_int_eq(CMS_verify(cms2, NULL, store, NULL, out,
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        -:  610:                         CMS_BINARY | CMS_VERIFY_PARTIAL),
+        -:  611:            0)
+        4:  612:        || !TEST_int_eq(ERR_GET_REASON(ERR_peek_last_error()),
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+        -:  613:            CMS_R_SIGNER_CERTIFICATE_NOT_FOUND))
+    #####:  614:        goto end;
+        -:  615:
+        2:  616:    sinfos = CMS_get0_SignerInfos(cms2);
+call    0 returned 2
+        2:  617:    if (!TEST_int_eq(sk_CMS_SignerInfo_num(sinfos), 2))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+    #####:  618:        goto end;
+        6:  619:    for (i = 0; i < sk_CMS_SignerInfo_num(sinfos); i++) {
+call    0 returned 6
+branch  1 taken 4
+branch  2 taken 2 (fallthrough)
+        4:  620:        CMS_SignerInfo *si = sk_CMS_SignerInfo_value(sinfos, i);
+call    0 returned 4
+        -:  621:
+        4:  622:        if (!TEST_int_eq(CMS_SignerInfo_get_verification_result(si,
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 4 (fallthrough)
+branch  3 taken 0
+        -:  623:                             CMS_VERIFY_RESULT),
+        -:  624:                0)
+        4:  625:            || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si,
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0 (fallthrough)
+branch  3 taken 4
+        -:  626:                                CMS_VERIFY_CERT),
+        -:  627:                0))
+    #####:  628:            goto end;
+        -:  629:    }
+        -:  630:
+        -:  631:    ret = 1;
+        2:  632:end:
+        2:  633:    ERR_clear_error();
+call    0 returned 2
+        2:  634:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2:  635:    CMS_ContentInfo_free(cms2);
+call    0 returned 2
+        2:  636:    X509_STORE_free(store);
+call    0 returned 2
+        2:  637:    BIO_free(in);
+call    0 returned 2
+        2:  638:    BIO_free(out);
+call    0 returned 2
+        2:  639:    BIO_free(der);
+call    0 returned 2
+        2:  640:    return ret;
+        -:  641:}
+        -:  642:
+        -:  643:/* self-signed throwaway cert for the second signer in the test below */
+function make_self_signed_cert called 8 returned 100% blocks executed 85%
+        8:  644:static X509 *make_self_signed_cert(EVP_PKEY *pkey, const char *cn)
+        -:  645:{
+        -:  646:    X509 *newcert = NULL, *ret = NULL;
+        -:  647:    X509_NAME *name = NULL;
+        -:  648:    ASN1_INTEGER *serial = NULL;
+        -:  649:
+        8:  650:    if (!TEST_ptr(newcert = X509_new())
+call    0 returned 8
+call    1 returned 8
+branch  2 taken 8 (fallthrough)
+branch  3 taken 0
+        8:  651:        || !TEST_true(X509_set_version(newcert, X509_VERSION_3)))
+call    0 returned 8
+call    1 returned 8
+branch  2 taken 0 (fallthrough)
+branch  3 taken 8
+    #####:  652:        goto err;
+        -:  653:
+        8:  654:    if (!TEST_ptr(serial = ASN1_INTEGER_new())
+call    0 returned 8
+call    1 returned 8
+branch  2 taken 8 (fallthrough)
+branch  3 taken 0
+        8:  655:        || !TEST_true(ASN1_INTEGER_set(serial, 1))
+call    0 returned 8
+call    1 returned 8
+branch  2 taken 8 (fallthrough)
+branch  3 taken 0
+        8:  656:        || !TEST_true(X509_set_serialNumber(newcert, serial)))
+call    0 returned 8
+call    1 returned 8
+branch  2 taken 0 (fallthrough)
+branch  3 taken 8
+    #####:  657:        goto err;
+        -:  658:
+        8:  659:    if (!TEST_ptr(X509_gmtime_adj(X509_getm_notBefore(newcert), 0))
+call    0 returned 8
+call    1 returned 8
+call    2 returned 8
+branch  3 taken 8 (fallthrough)
+branch  4 taken 0
+        8:  660:        || !TEST_ptr(X509_gmtime_adj(X509_getm_notAfter(newcert),
+call    0 returned 8
+call    1 returned 8
+call    2 returned 8
+branch  3 taken 0 (fallthrough)
+branch  4 taken 8
+        -:  661:            60L * 60L * 24L * 365L)))
+    #####:  662:        goto err;
+        -:  663:
+        8:  664:    if (!TEST_true(X509_set_pubkey(newcert, pkey)))
+call    0 returned 8
+call    1 returned 8
+branch  2 taken 0 (fallthrough)
+branch  3 taken 8
+    #####:  665:        goto err;
+        -:  666:
+        8:  667:    if (!TEST_ptr(name = X509_NAME_new())
+call    0 returned 8
+call    1 returned 8
+branch  2 taken 8 (fallthrough)
+branch  3 taken 0
+        8:  668:        || !TEST_true(X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC,
+call    0 returned 8
+call    1 returned 8
+branch  2 taken 8 (fallthrough)
+branch  3 taken 0
+        -:  669:            (const unsigned char *)cn, -1, -1, 0))
+        8:  670:        || !TEST_true(X509_set_subject_name(newcert, name))
+call    0 returned 8
+call    1 returned 8
+branch  2 taken 8 (fallthrough)
+branch  3 taken 0
+        8:  671:        || !TEST_true(X509_set_issuer_name(newcert, name)))
+call    0 returned 8
+call    1 returned 8
+branch  2 taken 0 (fallthrough)
+branch  3 taken 8
+    #####:  672:        goto err;
+        -:  673:
+        8:  674:    if (!TEST_int_gt(X509_sign(newcert, pkey, EVP_sha256()), 0))
+call    0 returned 8
+call    1 returned 8
+call    2 returned 8
+branch  3 taken 0 (fallthrough)
+branch  4 taken 8
+    #####:  675:        goto err;
+        -:  676:
+        -:  677:    ret = newcert;
+        -:  678:    newcert = NULL;
+        8:  679:err:
+        8:  680:    X509_free(newcert);
+call    0 returned 8
+        8:  681:    X509_NAME_free(name);
+call    0 returned 8
+        8:  682:    ASN1_INTEGER_free(serial);
+call    0 returned 8
+        8:  683:    return ret;
+        -:  684:}
+        -:  685:
+        -:  686:/*
+        -:  687: * Companion to test_CMS_verify_result_no_signer_cert() above, covering the
+        -:  688: * mixed case (scount == 1): a two-signer message where only *one* signer's
+        -:  689: * certificate is available at verification time.  Both SignerInfos must
+        -:  690: * report verify_result == 0.  Also checks that supplying both certs makes
+        -:  691: * CMS_verify() succeed.
+        -:  692: */
+function test_CMS_verify_result_partial_signer_cert called 2 returned 100% blocks executed 86%
+        2:  693:static int test_CMS_verify_result_partial_signer_cert(void)
+        -:  694:{
+        -:  695:    CMS_ContentInfo *cms = NULL, *cms2 = NULL;
+        -:  696:    BIO *in = NULL, *out = NULL, *der = NULL;
+        -:  697:    X509_STORE *store = NULL;
+        -:  698:    EVP_PKEY *pkey2 = NULL;
+        -:  699:    X509 *local_cert2 = NULL;
+        -:  700:    STACK_OF(X509) *both_certs = NULL;
+        -:  701:    STACK_OF(CMS_SignerInfo) *sinfos;
+        -:  702:    const unsigned char *p;
+        2:  703:    unsigned char *derbuf = NULL;
+        -:  704:    long derlen;
+        -:  705:    int i, found_verified = 0, found_unverified = 0, ret = 0;
+        -:  706:
+        2:  707:    if (!TEST_ptr(in = BIO_new_mem_buf("Hello World\n", -1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  708:        || !TEST_ptr(out = BIO_new(BIO_s_mem()))
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 2 (fallthrough)
+branch  4 taken 0
+        2:  709:        || !TEST_ptr(der = BIO_new(BIO_s_mem()))
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 2 (fallthrough)
+branch  4 taken 0
+        2:  710:        || !TEST_ptr(store = X509_STORE_new())
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  711:        || !TEST_ptr(both_certs = sk_X509_new_null()))
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+call    3 returned 2
+call    4 returned 2
+branch  5 taken 0 (fallthrough)
+branch  6 taken 2
+    #####:  712:        goto end;
+        -:  713:
+        2:  714:    if (!TEST_ptr(pkey2 = EVP_PKEY_Q_keygen(NULL, NULL, "RSA", (size_t)2048))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  715:        || !TEST_ptr(local_cert2 = make_self_signed_cert(pkey2, "second-signer")))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  716:        goto end;
+        -:  717:
+        -:  718:    /* two signers with two *different* certs, neither embedded */
+        2:  719:    if (!TEST_ptr(cms = CMS_sign(NULL, NULL, NULL, in,
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        -:  720:                      CMS_BINARY | CMS_PARTIAL | CMS_NOCERTS))
+        2:  721:        || !TEST_ptr(CMS_add1_signer(cms, cert, privkey, NULL, CMS_NOCERTS))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  722:        || !TEST_ptr(CMS_add1_signer(cms, local_cert2, pkey2, NULL, CMS_NOCERTS))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  723:        || !TEST_true(CMS_final(cms, in, NULL, CMS_BINARY)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  724:        goto end;
+        -:  725:
+        -:  726:    /* round-trip through DER so no in-memory signer cert pointers linger */
+        2:  727:    if (!TEST_true(i2d_CMS_bio(der, cms)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  728:        goto end;
+        2:  729:    derlen = BIO_get_mem_data(der, &derbuf);
+call    0 returned 2
+        2:  730:    p = derbuf;
+        2:  731:    if (!TEST_ptr(cms2 = d2i_CMS_ContentInfo(NULL, &p, derlen)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  732:        goto end;
+        -:  733:
+        -:  734:    /* only 'cert' (the 1st signer's) is supplied -> scount == 1, not 0 or 2 */
+        2:  735:    if (!TEST_int_ge(sk_X509_push(both_certs, cert), 1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  736:        goto end;
+        -:  737:
+        2:  738:    ERR_clear_error();
+call    0 returned 2
+        2:  739:    if (!TEST_int_eq(CMS_verify(cms2, both_certs, store, NULL, out,
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        -:  740:                         CMS_BINARY | CMS_VERIFY_PARTIAL),
+        -:  741:            0)
+        4:  742:        || !TEST_int_eq(ERR_GET_REASON(ERR_peek_last_error()),
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+        -:  743:            CMS_R_SIGNER_CERTIFICATE_NOT_FOUND))
+    #####:  744:        goto end;
+        -:  745:
+        2:  746:    sinfos = CMS_get0_SignerInfos(cms2);
+call    0 returned 2
+        2:  747:    if (!TEST_int_eq(sk_CMS_SignerInfo_num(sinfos), 2))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+    #####:  748:        goto end;
+        -:  749:    /*
+        -:  750:     * Neither signer must report success: CMS_verify() overall failed with
+        -:  751:     * CMS_R_SIGNER_CERTIFICATE_NOT_FOUND before any content/attr verification
+        -:  752:     * ran, so both entries must still be at verify_result == 0, regardless
+        -:  753:     * of whether that particular signer's own cert was found.
+        -:  754:     */
+        6:  755:    for (i = 0; i < sk_CMS_SignerInfo_num(sinfos); i++) {
+call    0 returned 6
+branch  1 taken 4
+branch  2 taken 2 (fallthrough)
+        4:  756:        CMS_SignerInfo *si = sk_CMS_SignerInfo_value(sinfos, i);
+call    0 returned 4
+        -:  757:
+        4:  758:        if (!TEST_int_eq(CMS_SignerInfo_get_verification_result(si,
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0 (fallthrough)
+branch  3 taken 4
+        -:  759:                             CMS_VERIFY_RESULT),
+        -:  760:                0))
+    #####:  761:            goto end;
+        -:  762:    }
+        -:  763:
+        -:  764:    /* now supply both certs: verification of both signers must succeed */
+        2:  765:    if (!TEST_int_ge(sk_X509_push(both_certs, local_cert2), 1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  766:        goto end;
+        -:  767:
+        2:  768:    ERR_clear_error();
+call    0 returned 2
+        2:  769:    if (!TEST_int_eq(CMS_verify(cms2, both_certs, store, NULL, out,
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        -:  770:                         CMS_BINARY | CMS_VERIFY_PARTIAL
+        -:  771:                             | CMS_NO_SIGNER_CERT_VERIFY),
+        -:  772:            1))
+    #####:  773:        goto end;
+        -:  774:
+        6:  775:    for (i = 0; i < sk_CMS_SignerInfo_num(sinfos); i++) {
+call    0 returned 6
+branch  1 taken 4
+branch  2 taken 2 (fallthrough)
+        4:  776:        CMS_SignerInfo *si = sk_CMS_SignerInfo_value(sinfos, i);
+call    0 returned 4
+        4:  777:        int r = CMS_SignerInfo_get_verification_result(si, CMS_VERIFY_RESULT);
+call    0 returned 4
+        -:  778:
+        4:  779:        if (r)
+branch  0 taken 4 (fallthrough)
+branch  1 taken 0
+        4:  780:            found_verified++;
+        -:  781:        else
+    #####:  782:            found_unverified++;
+        -:  783:    }
+        2:  784:    if (!TEST_int_eq(found_verified, 2) || !TEST_int_eq(found_unverified, 0))
+call    0 returned 2
+branch  1 taken 2 (fallthrough)
+branch  2 taken 0
+call    3 returned 2
+branch  4 taken 0 (fallthrough)
+branch  5 taken 2
+    #####:  785:        goto end;
+        -:  786:
+        -:  787:    ret = 1;
+        2:  788:end:
+        2:  789:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2:  790:    CMS_ContentInfo_free(cms2);
+call    0 returned 2
+        2:  791:    X509_STORE_free(store);
+call    0 returned 2
+        -:  792:    /* both_certs does not own cert/local_cert2 (no _UP_REF push), just free the stack */
+        2:  793:    sk_X509_free(both_certs);
+call    0 returned 2
+        2:  794:    X509_free(local_cert2);
+call    0 returned 2
+        2:  795:    EVP_PKEY_free(pkey2);
+call    0 returned 2
+        2:  796:    BIO_free(in);
+call    0 returned 2
+        2:  797:    BIO_free(out);
+call    0 returned 2
+        2:  798:    BIO_free(der);
+call    0 returned 2
+        2:  799:    return ret;
+        -:  800:}
+        -:  801:
+        -:  802:/*
+        -:  803: * A CMS_ContentInfo that verified successfully once (all four per-SignerInfo
+        -:  804: * fields left at 1) must not keep reporting that state if it is verified
+        -:  805: * again and that second call fails via the early check_content() path at the
+        -:  806: * top of CMS_verify() -- reached when the content turns out to be missing
+        -:  807: * and dcont is NULL.
+        -:  808: */
+function test_CMS_verify_reused_after_check_content_failure called 2 returned 100% blocks executed 87%
+        2:  809:static int test_CMS_verify_reused_after_check_content_failure(void)
+        -:  810:{
+        -:  811:    CMS_ContentInfo *cms = NULL;
+        -:  812:    BIO *in = NULL, *out = NULL;
+        -:  813:    X509_STORE *store = NULL;
+        -:  814:    EVP_PKEY *pkey2 = NULL;
+        -:  815:    X509 *local_cert2 = NULL;
+        -:  816:    CMS_SignerInfo *si;
+        -:  817:    STACK_OF(CMS_SignerInfo) *sinfos;
+        -:  818:    ASN1_OCTET_STRING *saved_econtent = NULL;
+        -:  819:    int ret = 0;
+        -:  820:
+        -:  821:    /*
+        -:  822:     * Self-signed cert added directly to the store: chain building succeeds
+        -:  823:     * trivially, so the first CMS_verify() below genuinely sets
+        -:  824:     * cert_verified (unlike the other two tests above, which use
+        -:  825:     * CMS_NO_SIGNER_CERT_VERIFY and never actually exercise that field).
+        -:  826:     */
+        2:  827:    if (!TEST_ptr(in = BIO_new_mem_buf("Hello World\n", -1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  828:        || !TEST_ptr(out = BIO_new(BIO_s_mem()))
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 2 (fallthrough)
+branch  4 taken 0
+        2:  829:        || !TEST_ptr(store = X509_STORE_new())
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  830:        || !TEST_ptr(pkey2 = EVP_PKEY_Q_keygen(NULL, NULL, "RSA", (size_t)2048))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  831:        || !TEST_ptr(local_cert2 = make_self_signed_cert(pkey2, "reused-cms-signer"))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+        2:  832:        || !TEST_true(X509_STORE_add_cert(store, local_cert2)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0
+branch  3 taken 2
+    #####:  833:        goto end;
+        -:  834:
+        -:  835:    /* one signer, cert embedded, content embedded (not detached) */
+        2:  836:    if (!TEST_ptr(cms = CMS_sign(local_cert2, pkey2, NULL, in, CMS_BINARY)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  837:        goto end;
+        -:  838:
+        -:  839:    /*
+        -:  840:     * First verification succeeds on this exact in-memory CMS_ContentInfo
+        -:  841:     * (no DER round-trip): 'cert' is directly in the trust store, so
+        -:  842:     * verify_result, cert_verified, attr_verified and content_verified all
+        -:  843:     * land on 1 for the single signer.
+        -:  844:     */
+        2:  845:    ERR_clear_error();
+call    0 returned 2
+        2:  846:    if (!TEST_int_eq(CMS_verify(cms, NULL, store, NULL, out, CMS_BINARY), 1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  847:        goto end;
+        -:  848:
+        2:  849:    sinfos = CMS_get0_SignerInfos(cms);
+call    0 returned 2
+        2:  850:    if (!TEST_int_eq(sk_CMS_SignerInfo_num(sinfos), 1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  851:        goto end;
+        2:  852:    si = sk_CMS_SignerInfo_value(sinfos, 0);
+call    0 returned 2
+        2:  853:    if (!TEST_int_eq(CMS_SignerInfo_get_verification_result(si, CMS_VERIFY_RESULT), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  854:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si, CMS_VERIFY_CERT), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  855:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si, CMS_VERIFY_ATTR), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  856:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si, CMS_VERIFY_CONTENT), 1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  857:        goto end;
+        -:  858:
+        -:  859:    /*
+        -:  860:     * Corrupt the embedded content in place on the same, still-"verified"
+        -:  861:     * object so the next call takes the check_content() early-return path
+        -:  862:     * (dcont == NULL and no eContent) instead of the main body / err label.
+        -:  863:     */
+        2:  864:    saved_econtent = cms->d.signedData->encapContentInfo->eContent;
+        2:  865:    cms->d.signedData->encapContentInfo->eContent = NULL;
+        -:  866:
+        2:  867:    ERR_clear_error();
+call    0 returned 2
+        2:  868:    if (!TEST_int_eq(CMS_verify(cms, NULL, store, NULL, out, CMS_BINARY), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  869:        goto end;
+        -:  870:
+        2:  871:    if (!TEST_int_eq(CMS_SignerInfo_get_verification_result(si, CMS_VERIFY_RESULT), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  872:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si, CMS_VERIFY_CERT), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  873:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si, CMS_VERIFY_ATTR), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  874:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si, CMS_VERIFY_CONTENT), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  875:        goto end;
+        -:  876:
+        -:  877:    ret = 1;
+        2:  878:end:
+        -:  879:    /* put the real content back so CMS_ContentInfo_free() doesn't leak it */
+        2:  880:    if (cms != NULL && saved_econtent != NULL)
+branch  0 taken 2 (fallthrough)
+branch  1 taken 0
+        2:  881:        cms->d.signedData->encapContentInfo->eContent = saved_econtent;
+        2:  882:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2:  883:    X509_STORE_free(store);
+call    0 returned 2
+        2:  884:    X509_free(local_cert2);
+call    0 returned 2
+        2:  885:    EVP_PKEY_free(pkey2);
+call    0 returned 2
+        2:  886:    BIO_free(in);
+call    0 returned 2
+        2:  887:    BIO_free(out);
+call    0 returned 2
+        2:  888:    return ret;
+        -:  889:}
+        -:  890:
+        -:  891:/*
+        -:  892: * With two independently trusted signers and CMS_VERIFY_PARTIAL, one
+        -:  893: * signer's signature failure must not affect the *other* signer's per-field
+        -:  894: * results -- including once that other signer also fails and the overall
+        -:  895: * call fails too.  Without CMS_VERIFY_PARTIAL, verification must stop at
+        -:  896: * the first failure.
+        -:  897: */
+function test_CMS_verify_result_partial_independence called 2 returned 100% blocks executed 91%
+        2:  898:static int test_CMS_verify_result_partial_independence(void)
+        -:  899:{
+        -:  900:    CMS_ContentInfo *cms = NULL;
+        -:  901:    BIO *in = NULL, *out = NULL;
+        -:  902:    X509_STORE *store = NULL;
+        -:  903:    EVP_PKEY *pkey1 = NULL, *pkey2 = NULL;
+        -:  904:    X509 *cert1 = NULL, *local_cert2 = NULL;
+        -:  905:    STACK_OF(CMS_SignerInfo) *sinfos;
+        -:  906:    STACK_OF(X509) *signers = NULL;
+        -:  907:    CMS_SignerInfo *si1, *si2;
+        -:  908:    ASN1_OCTET_STRING *sig;
+        -:  909:    int ret = 0;
+        -:  910:
+        -:  911:    /*
+        -:  912:     * Two independent, self-signed certs added directly to the trust store:
+        -:  913:     * chain building for each is trivial (issuer == self, already trusted),
+        -:  914:     * so both genuinely get cert_verified == 1, unlike the global 'cert'
+        -:  915:     * (issued by a separate test CA whose issuer isn't in this store).
+        -:  916:     */
+        2:  917:    if (!TEST_ptr(in = BIO_new_mem_buf("Hello World\n", -1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  918:        || !TEST_ptr(out = BIO_new(BIO_s_mem()))
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 2 (fallthrough)
+branch  4 taken 0
+        2:  919:        || !TEST_ptr(store = X509_STORE_new())
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  920:        || !TEST_ptr(pkey1 = EVP_PKEY_Q_keygen(NULL, NULL, "RSA", (size_t)2048))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  921:        || !TEST_ptr(cert1 = make_self_signed_cert(pkey1, "first-independent-signer"))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  922:        || !TEST_ptr(pkey2 = EVP_PKEY_Q_keygen(NULL, NULL, "RSA", (size_t)2048))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  923:        || !TEST_ptr(local_cert2 = make_self_signed_cert(pkey2, "second-independent-signer"))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+        2:  924:        || !TEST_true(X509_STORE_add_cert(store, cert1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0
+branch  3 taken 2 (fallthrough)
+        2:  925:        || !TEST_true(X509_STORE_add_cert(store, local_cert2)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0
+branch  3 taken 2
+    #####:  926:        goto end;
+        -:  927:
+        -:  928:    /* two signers, both certs embedded, both directly trusted */
+        2:  929:    if (!TEST_ptr(cms = CMS_sign(NULL, NULL, NULL, in, CMS_BINARY | CMS_PARTIAL))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  930:        || !TEST_ptr(CMS_add1_signer(cms, cert1, pkey1, NULL, 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  931:        || !TEST_ptr(CMS_add1_signer(cms, local_cert2, pkey2, NULL, 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  932:        || !TEST_true(CMS_final(cms, in, NULL, CMS_BINARY)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  933:        goto end;
+        -:  934:
+        2:  935:    sinfos = CMS_get0_SignerInfos(cms);
+call    0 returned 2
+        2:  936:    if (!TEST_int_eq(sk_CMS_SignerInfo_num(sinfos), 2))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  937:        goto end;
+        2:  938:    si1 = sk_CMS_SignerInfo_value(sinfos, 0);
+call    0 returned 2
+        2:  939:    si2 = sk_CMS_SignerInfo_value(sinfos, 1);
+call    0 returned 2
+        -:  940:
+        -:  941:    /* break signer 1's signature over the signed attributes */
+        2:  942:    if (!TEST_ptr(sig = CMS_SignerInfo_get0_signature(si1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  943:        || !TEST_size_t_gt(ASN1_STRING_get_length(sig), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  944:        goto end;
+        2:  945:    ((uint8_t *)ASN1_STRING_get0_data(sig))[0] ^= 0xff;
+call    0 returned 2
+        -:  946:
+        2:  947:    ERR_clear_error();
+call    0 returned 2
+        2:  948:    if (!TEST_int_eq(CMS_verify(cms, NULL, store, NULL, out, CMS_BINARY), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  949:        goto end;
+        -:  950:
+        -:  951:    /*
+        -:  952:     * Without CMS_VERIFY_PARTIAL, verification stops at signer 1's failure:
+        -:  953:     * signer 2's signed attributes are not checked and the content is not
+        -:  954:     * read.
+        -:  955:     */
+        2:  956:    if (!TEST_int_eq(CMS_SignerInfo_get_verification_result(si1, CMS_VERIFY_RESULT), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  957:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si1, CMS_VERIFY_CERT), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  958:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si1, CMS_VERIFY_ATTR), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  959:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si2, CMS_VERIFY_RESULT), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  960:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si2, CMS_VERIFY_CERT), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  961:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si2, CMS_VERIFY_ATTR), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  962:        || !TEST_size_t_eq(BIO_ctrl_pending(out), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  963:        goto end;
+        -:  964:
+        2:  965:    ERR_clear_error();
+call    0 returned 2
+        2:  966:    if (!TEST_int_eq(CMS_verify(cms, NULL, store, NULL, out,
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+        -:  967:                         CMS_BINARY | CMS_VERIFY_PARTIAL),
+        -:  968:            1))
+    #####:  969:        goto end;
+        -:  970:
+        -:  971:    /*
+        -:  972:     * Signer 1 failed and signer 2 succeeded (partial verify), but signer
+        -:  973:     * 1's certificate genuinely re-verified during this call and must
+        -:  974:     * still report so.
+        -:  975:     */
+        2:  976:    if (!TEST_int_eq(CMS_SignerInfo_get_verification_result(si1, CMS_VERIFY_RESULT), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  977:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si1, CMS_VERIFY_CERT), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  978:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si1, CMS_VERIFY_ATTR), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  979:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si2, CMS_VERIFY_RESULT), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  980:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si2, CMS_VERIFY_CERT), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  981:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si2, CMS_VERIFY_ATTR), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  982:        || !TEST_size_t_gt(BIO_ctrl_pending(out), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  983:        goto end;
+        -:  984:
+        -:  985:    /* Only the signer whose signature verified may be reported */
+        2:  986:    if (!TEST_ptr(signers = CMS_get0_signers(cms))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  987:        || !TEST_int_eq(sk_X509_num(signers), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  988:        || !TEST_int_eq(X509_cmp(sk_X509_value(signers, 0), local_cert2), 0))
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 0 (fallthrough)
+branch  4 taken 2
+    #####:  989:        goto end;
+        -:  990:
+        -:  991:    /* now also break signer 2's signature: the overall call must now fail */
+        2:  992:    if (!TEST_ptr(sig = CMS_SignerInfo_get0_signature(si2))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2:  993:        || !TEST_size_t_gt(ASN1_STRING_get_length(sig), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####:  994:        goto end;
+        2:  995:    ((uint8_t *)ASN1_STRING_get0_data(sig))[0] ^= 0xff;
+call    0 returned 2
+        -:  996:
+        2:  997:    ERR_clear_error();
+call    0 returned 2
+        2:  998:    if (!TEST_int_eq(CMS_verify(cms, NULL, store, NULL, out,
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+        -:  999:                         CMS_BINARY | CMS_VERIFY_PARTIAL),
+        -: 1000:            0))
+    #####: 1001:        goto end;
+        -: 1002:
+        -: 1003:    /*
+        -: 1004:     * Both signers now fail overall (verify_result == 0), but both
+        -: 1005:     * certificates were genuinely re-verified during this same call: that
+        -: 1006:     * per-signer fact must not be erased just because the all-vs-partial
+        -: 1007:     * policy made the whole call fail.
+        -: 1008:     */
+        2: 1009:    if (!TEST_int_eq(CMS_SignerInfo_get_verification_result(si1, CMS_VERIFY_RESULT), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1010:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si1, CMS_VERIFY_CERT), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1011:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si1, CMS_VERIFY_ATTR), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1012:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si2, CMS_VERIFY_RESULT), 0)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1013:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si2, CMS_VERIFY_CERT), 1)
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1014:        || !TEST_int_eq(CMS_SignerInfo_get_verification_result(si2, CMS_VERIFY_ATTR), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1015:        goto end;
+        -: 1016:
+        -: 1017:    ret = 1;
+        2: 1018:end:
+        2: 1019:    sk_X509_free(signers);
+call    0 returned 2
+        2: 1020:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2: 1021:    X509_STORE_free(store);
+call    0 returned 2
+        2: 1022:    X509_free(cert1);
+call    0 returned 2
+        2: 1023:    EVP_PKEY_free(pkey1);
+call    0 returned 2
+        2: 1024:    X509_free(local_cert2);
+call    0 returned 2
+        2: 1025:    EVP_PKEY_free(pkey2);
+call    0 returned 2
+        2: 1026:    BIO_free(in);
+call    0 returned 2
+        2: 1027:    BIO_free(out);
+call    0 returned 2
+        2: 1028:    return ret;
+        -: 1029:}
+        -: 1030:
+function test_CMS_add1_signer_ed448 called 6 returned 100% blocks executed 78%
+        6: 1031:static int test_CMS_add1_signer_ed448(const EVP_MD *md, unsigned int flags,
+        -: 1032:    int expect_success)
+        -: 1033:{
+        -: 1034:    CMS_ContentInfo *cms = NULL;
+        -: 1035:    CMS_SignerInfo *si = NULL;
+        -: 1036:    int ret = 0;
+        -: 1037:
+        6: 1038:    if (!TEST_ptr(cms = CMS_ContentInfo_new()))
+call    0 returned 6
+call    1 returned 6
+branch  2 taken 0 (fallthrough)
+branch  3 taken 6
+    #####: 1039:        goto end;
+        -: 1040:
+        6: 1041:    si = CMS_add1_signer(cms, ed448_cert, ed448_privkey, md, flags);
+call    0 returned 6
+        6: 1042:    if (expect_success) {
+branch  0 taken 2 (fallthrough)
+branch  1 taken 4
+        2: 1043:        if (!TEST_ptr(si))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1044:            goto end;
+        4: 1045:    } else if (!TEST_ptr_null(si)) {
+call    0 returned 4
+branch  1 taken 0 (fallthrough)
+branch  2 taken 4
+    #####: 1046:        goto end;
+        -: 1047:    }
+        -: 1048:
+        -: 1049:    ret = 1;
+        6: 1050:end:
+        6: 1051:    if (!expect_success && ret)
+branch  0 taken 4 (fallthrough)
+branch  1 taken 2
+        4: 1052:        ERR_clear_error();
+call    0 returned 4
+        6: 1053:    CMS_ContentInfo_free(cms);
+call    0 returned 6
+        6: 1054:    return ret;
+        -: 1055:}
+        -: 1056:
+function test_CMS_add1_signer_ed448_signed_attrs called 2 returned 100% blocks executed 100%
+        2: 1057:static int test_CMS_add1_signer_ed448_signed_attrs(void)
+        -: 1058:{
+        2: 1059:    return test_CMS_add1_signer_ed448(NULL, 0, 0);
+call    0 returned 2
+        -: 1060:}
+        -: 1061:
+function test_CMS_add1_signer_ed448_signed_attrs_md called 2 returned 100% blocks executed 100%
+        2: 1062:static int test_CMS_add1_signer_ed448_signed_attrs_md(void)
+        -: 1063:{
+        2: 1064:    return test_CMS_add1_signer_ed448(EVP_shake256(), 0, 0);
+call    0 returned 2
+call    1 returned 2
+        -: 1065:}
+        -: 1066:
+function test_CMS_add1_signer_ed448_noattr called 2 returned 100% blocks executed 100%
+        2: 1067:static int test_CMS_add1_signer_ed448_noattr(void)
+        -: 1068:{
+        2: 1069:    return test_CMS_add1_signer_ed448(NULL, CMS_NOATTR, 1);
+call    0 returned 2
+        -: 1070:}
+        -: 1071:
+function test_d2i_CMS_bio_NULL called 2 returned 100% blocks executed 91%
+        2: 1072:static int test_d2i_CMS_bio_NULL(void)
+        -: 1073:{
+        -: 1074:    BIO *bio, *content = NULL;
+        -: 1075:    CMS_ContentInfo *cms = NULL;
+        -: 1076:    unsigned int flags = CMS_NO_SIGNER_CERT_VERIFY;
+        -: 1077:    int ret = 0;
+        -: 1078:
+        -: 1079:    /*
+        -: 1080:     * Test data generated using:
+        -: 1081:     * openssl cms -sign -md sha256 -signer ./test/certs/rootCA.pem -inkey \
+        -: 1082:     * ./test/certs/rootCA.key -nodetach -outform DER -in ./in.txt -out out.der \
+        -: 1083:     * -nosmimecap
+        -: 1084:     */
+        -: 1085:    static const unsigned char cms_data[] = {
+        -: 1086:        0x30, 0x82, 0x05, 0xc5, 0x06, 0x09, 0x2a, 0x86,
+        -: 1087:        0x48, 0x86, 0xf7, 0x0d, 0x01, 0x07, 0x02, 0xa0,
+        -: 1088:        0x82, 0x05, 0xb6, 0x30, 0x82, 0x05, 0xb2, 0x02,
+        -: 1089:        0x01, 0x01, 0x31, 0x0d, 0x30, 0x0b, 0x06, 0x09,
+        -: 1090:        0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02,
+        -: 1091:        0x01, 0x30, 0x1c, 0x06, 0x09, 0x2a, 0x86, 0x48,
+        -: 1092:        0x86, 0xf7, 0x0d, 0x01, 0x07, 0x01, 0xa0, 0x0f,
+        -: 1093:        0x04, 0x0d, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20,
+        -: 1094:        0x57, 0x6f, 0x72, 0x6c, 0x64, 0x0d, 0x0a, 0xa0,
+        -: 1095:        0x82, 0x03, 0x83, 0x30, 0x82, 0x03, 0x7f, 0x30,
+        -: 1096:        0x82, 0x02, 0x67, 0xa0, 0x03, 0x02, 0x01, 0x02,
+        -: 1097:        0x02, 0x09, 0x00, 0x88, 0x43, 0x29, 0xcb, 0xc2,
+        -: 1098:        0xeb, 0x15, 0x9a, 0x30, 0x0d, 0x06, 0x09, 0x2a,
+        -: 1099:        0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x0b,
+        -: 1100:        0x05, 0x00, 0x30, 0x56, 0x31, 0x0b, 0x30, 0x09,
+        -: 1101:        0x06, 0x03, 0x55, 0x04, 0x06, 0x13, 0x02, 0x41,
+        -: 1102:        0x55, 0x31, 0x13, 0x30, 0x11, 0x06, 0x03, 0x55,
+        -: 1103:        0x04, 0x08, 0x0c, 0x0a, 0x53, 0x6f, 0x6d, 0x65,
+        -: 1104:        0x2d, 0x53, 0x74, 0x61, 0x74, 0x65, 0x31, 0x21,
+        -: 1105:        0x30, 0x1f, 0x06, 0x03, 0x55, 0x04, 0x0a, 0x0c,
+        -: 1106:        0x18, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x65,
+        -: 1107:        0x74, 0x20, 0x57, 0x69, 0x64, 0x67, 0x69, 0x74,
+        -: 1108:        0x73, 0x20, 0x50, 0x74, 0x79, 0x20, 0x4c, 0x74,
+        -: 1109:        0x64, 0x31, 0x0f, 0x30, 0x0d, 0x06, 0x03, 0x55,
+        -: 1110:        0x04, 0x03, 0x0c, 0x06, 0x72, 0x6f, 0x6f, 0x74,
+        -: 1111:        0x43, 0x41, 0x30, 0x1e, 0x17, 0x0d, 0x31, 0x35,
+        -: 1112:        0x30, 0x37, 0x30, 0x32, 0x31, 0x33, 0x31, 0x35,
+        -: 1113:        0x31, 0x31, 0x5a, 0x17, 0x0d, 0x33, 0x35, 0x30,
+        -: 1114:        0x37, 0x30, 0x32, 0x31, 0x33, 0x31, 0x35, 0x31,
+        -: 1115:        0x31, 0x5a, 0x30, 0x56, 0x31, 0x0b, 0x30, 0x09,
+        -: 1116:        0x06, 0x03, 0x55, 0x04, 0x06, 0x13, 0x02, 0x41,
+        -: 1117:        0x55, 0x31, 0x13, 0x30, 0x11, 0x06, 0x03, 0x55,
+        -: 1118:        0x04, 0x08, 0x0c, 0x0a, 0x53, 0x6f, 0x6d, 0x65,
+        -: 1119:        0x2d, 0x53, 0x74, 0x61, 0x74, 0x65, 0x31, 0x21,
+        -: 1120:        0x30, 0x1f, 0x06, 0x03, 0x55, 0x04, 0x0a, 0x0c,
+        -: 1121:        0x18, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x65,
+        -: 1122:        0x74, 0x20, 0x57, 0x69, 0x64, 0x67, 0x69, 0x74,
+        -: 1123:        0x73, 0x20, 0x50, 0x74, 0x79, 0x20, 0x4c, 0x74,
+        -: 1124:        0x64, 0x31, 0x0f, 0x30, 0x0d, 0x06, 0x03, 0x55,
+        -: 1125:        0x04, 0x03, 0x0c, 0x06, 0x72, 0x6f, 0x6f, 0x74,
+        -: 1126:        0x43, 0x41, 0x30, 0x82, 0x01, 0x22, 0x30, 0x0d,
+        -: 1127:        0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d,
+        -: 1128:        0x01, 0x01, 0x01, 0x05, 0x00, 0x03, 0x82, 0x01,
+        -: 1129:        0x0f, 0x00, 0x30, 0x82, 0x01, 0x0a, 0x02, 0x82,
+        -: 1130:        0x01, 0x01, 0x00, 0xc0, 0xf1, 0x6b, 0x77, 0x88,
+        -: 1131:        0xac, 0x35, 0xdf, 0xfb, 0x73, 0x53, 0x2f, 0x92,
+        -: 1132:        0x80, 0x2f, 0x74, 0x16, 0x32, 0x4d, 0xf5, 0x10,
+        -: 1133:        0x20, 0x6f, 0x6c, 0x3a, 0x8e, 0xd1, 0xdc, 0x6b,
+        -: 1134:        0xe1, 0x2e, 0x3e, 0xc3, 0x04, 0x0f, 0xbf, 0x9b,
+        -: 1135:        0xc4, 0xc9, 0x12, 0xd1, 0xe4, 0x0b, 0x45, 0x97,
+        -: 1136:        0xe5, 0x06, 0xcd, 0x66, 0x3a, 0xe1, 0xe0, 0xe2,
+        -: 1137:        0x2b, 0xdf, 0xa2, 0xc4, 0xec, 0x7b, 0xd3, 0x3d,
+        -: 1138:        0x3c, 0x8a, 0xff, 0x5e, 0x74, 0xa0, 0xab, 0xa7,
+        -: 1139:        0x03, 0x6a, 0x16, 0x5b, 0x5e, 0x92, 0xc4, 0x7e,
+        -: 1140:        0x5b, 0x79, 0x8a, 0x69, 0xd4, 0xbc, 0x83, 0x5e,
+        -: 1141:        0xae, 0x42, 0x92, 0x74, 0xa5, 0x2b, 0xe7, 0x00,
+        -: 1142:        0xc1, 0xa9, 0xdc, 0xd5, 0xb1, 0x53, 0x07, 0x0f,
+        -: 1143:        0x73, 0xf7, 0x8e, 0xad, 0x14, 0x3e, 0x25, 0x9e,
+        -: 1144:        0xe5, 0x1e, 0xe6, 0xcc, 0x91, 0xcd, 0x95, 0x0c,
+        -: 1145:        0x80, 0x44, 0x20, 0xc3, 0xfd, 0x17, 0xcf, 0x91,
+        -: 1146:        0x3d, 0x63, 0x10, 0x1c, 0x14, 0x5b, 0xfb, 0xc3,
+        -: 1147:        0xa8, 0xc1, 0x88, 0xb2, 0x77, 0xff, 0x9c, 0xdb,
+        -: 1148:        0xfc, 0x6a, 0x44, 0x44, 0x44, 0xf7, 0x85, 0xec,
+        -: 1149:        0x08, 0x2c, 0xd4, 0xdf, 0x81, 0xa3, 0x79, 0xc9,
+        -: 1150:        0xfe, 0x1e, 0x9b, 0x93, 0x16, 0x53, 0xb7, 0x97,
+        -: 1151:        0xab, 0xbe, 0x4f, 0x1a, 0xa5, 0xe2, 0xfa, 0x46,
+        -: 1152:        0x05, 0xe4, 0x0d, 0x9c, 0x2a, 0xa4, 0xcc, 0xb9,
+        -: 1153:        0x1e, 0x21, 0xa0, 0x6c, 0xc4, 0xab, 0x59, 0xb0,
+        -: 1154:        0x40, 0x39, 0xbb, 0xf9, 0x88, 0xad, 0xfd, 0xdf,
+        -: 1155:        0x8d, 0xb4, 0x0b, 0xaf, 0x7e, 0x41, 0xe0, 0x21,
+        -: 1156:        0x3c, 0xc8, 0x33, 0x45, 0x49, 0x84, 0x2f, 0x93,
+        -: 1157:        0x06, 0xee, 0xfd, 0x4f, 0xed, 0x4f, 0xf3, 0xbc,
+        -: 1158:        0x9b, 0xde, 0xfc, 0x25, 0x5e, 0x55, 0xd5, 0x75,
+        -: 1159:        0xd4, 0xc5, 0x7b, 0x3a, 0x40, 0x35, 0x06, 0x9f,
+        -: 1160:        0xc4, 0x84, 0xb4, 0x6c, 0x93, 0x0c, 0xaf, 0x37,
+        -: 1161:        0x5a, 0xaf, 0xb6, 0x41, 0x4d, 0x26, 0x23, 0x1c,
+        -: 1162:        0xb8, 0x02, 0xb3, 0x02, 0x03, 0x01, 0x00, 0x01,
+        -: 1163:        0xa3, 0x50, 0x30, 0x4e, 0x30, 0x0c, 0x06, 0x03,
+        -: 1164:        0x55, 0x1d, 0x13, 0x04, 0x05, 0x30, 0x03, 0x01,
+        -: 1165:        0x01, 0xff, 0x30, 0x1d, 0x06, 0x03, 0x55, 0x1d,
+        -: 1166:        0x0e, 0x04, 0x16, 0x04, 0x14, 0x85, 0x56, 0x89,
+        -: 1167:        0x35, 0xe2, 0x9f, 0x00, 0x1a, 0xe1, 0x86, 0x03,
+        -: 1168:        0x0b, 0x4b, 0xaf, 0x76, 0x12, 0x6b, 0x33, 0x6d,
+        -: 1169:        0xfd, 0x30, 0x1f, 0x06, 0x03, 0x55, 0x1d, 0x23,
+        -: 1170:        0x04, 0x18, 0x30, 0x16, 0x80, 0x14, 0x85, 0x56,
+        -: 1171:        0x89, 0x35, 0xe2, 0x9f, 0x00, 0x1a, 0xe1, 0x86,
+        -: 1172:        0x03, 0x0b, 0x4b, 0xaf, 0x76, 0x12, 0x6b, 0x33,
+        -: 1173:        0x6d, 0xfd, 0x30, 0x0d, 0x06, 0x09, 0x2a, 0x86,
+        -: 1174:        0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x0b, 0x05,
+        -: 1175:        0x00, 0x03, 0x82, 0x01, 0x01, 0x00, 0x32, 0x0a,
+        -: 1176:        0xbf, 0x2a, 0x0a, 0xe2, 0xbb, 0x4f, 0x43, 0xce,
+        -: 1177:        0x88, 0xda, 0x5a, 0x39, 0x10, 0x37, 0x80, 0xbb,
+        -: 1178:        0x37, 0x2d, 0x5e, 0x2d, 0x88, 0xdd, 0x26, 0x69,
+        -: 1179:        0x9c, 0xe7, 0xb4, 0x98, 0x20, 0xb1, 0x25, 0xe6,
+        -: 1180:        0x61, 0x59, 0x6d, 0x12, 0xec, 0x9b, 0x87, 0xbe,
+        -: 1181:        0x57, 0xe1, 0x12, 0x05, 0xc5, 0x04, 0xf1, 0x17,
+        -: 1182:        0xce, 0x14, 0xb8, 0x1c, 0x92, 0xd4, 0x95, 0x95,
+        -: 1183:        0x2c, 0x5b, 0x28, 0x89, 0xfb, 0x72, 0x9c, 0x20,
+        -: 1184:        0xd3, 0x32, 0x81, 0xa8, 0x85, 0xec, 0xc8, 0x08,
+        -: 1185:        0x7b, 0xa8, 0x59, 0x5b, 0x3a, 0x6c, 0x31, 0xab,
+        -: 1186:        0x52, 0xe2, 0x66, 0xcd, 0x14, 0x49, 0x5c, 0xf3,
+        -: 1187:        0xd3, 0x3e, 0x62, 0xbc, 0x91, 0x16, 0xb4, 0x1c,
+        -: 1188:        0xf5, 0xdd, 0x54, 0xaa, 0x3c, 0x61, 0x97, 0x79,
+        -: 1189:        0xac, 0xe4, 0xc8, 0x43, 0x35, 0xc3, 0x0f, 0xfc,
+        -: 1190:        0xf3, 0x70, 0x1d, 0xaf, 0xf0, 0x9c, 0x8a, 0x2a,
+        -: 1191:        0x92, 0x93, 0x48, 0xaa, 0xd0, 0xe8, 0x47, 0xbe,
+        -: 1192:        0x35, 0xc1, 0xc6, 0x7b, 0x6d, 0xda, 0xfa, 0x5d,
+        -: 1193:        0x57, 0x45, 0xf3, 0xea, 0x41, 0x8f, 0x36, 0xc1,
+        -: 1194:        0x3c, 0xf4, 0x52, 0x7f, 0x6e, 0x31, 0xdd, 0xba,
+        -: 1195:        0x9a, 0xbc, 0x70, 0x56, 0x71, 0x38, 0xdc, 0x49,
+        -: 1196:        0x57, 0x0c, 0xfd, 0x91, 0x17, 0xc5, 0xea, 0x87,
+        -: 1197:        0xe5, 0x23, 0x74, 0x19, 0xb2, 0xb6, 0x99, 0x0c,
+        -: 1198:        0x6b, 0xa2, 0x05, 0xf8, 0x51, 0x68, 0xed, 0x97,
+        -: 1199:        0xe0, 0xdf, 0x62, 0xf9, 0x7e, 0x7a, 0x3a, 0x44,
+        -: 1200:        0x71, 0x83, 0x57, 0x28, 0x49, 0x88, 0x69, 0xb5,
+        -: 1201:        0x14, 0x1e, 0xda, 0x46, 0xe3, 0x6e, 0x78, 0xe1,
+        -: 1202:        0xcb, 0x8f, 0xb5, 0x98, 0xb3, 0x2d, 0x6e, 0x5b,
+        -: 1203:        0xb7, 0xf6, 0x93, 0x24, 0x14, 0x1f, 0xa4, 0xf6,
+        -: 1204:        0x69, 0xbd, 0xff, 0x4c, 0x52, 0x50, 0x02, 0xc5,
+        -: 1205:        0x43, 0x8d, 0x14, 0xe2, 0xd0, 0x75, 0x9f, 0x12,
+        -: 1206:        0x5e, 0x94, 0x89, 0xd1, 0xef, 0x77, 0x89, 0x7d,
+        -: 1207:        0x89, 0xd9, 0x9e, 0x76, 0x99, 0x24, 0x31, 0x82,
+        -: 1208:        0x01, 0xf7, 0x30, 0x82, 0x01, 0xf3, 0x02, 0x01,
+        -: 1209:        0x01, 0x30, 0x63, 0x30, 0x56, 0x31, 0x0b, 0x30,
+        -: 1210:        0x09, 0x06, 0x03, 0x55, 0x04, 0x06, 0x13, 0x02,
+        -: 1211:        0x41, 0x55, 0x31, 0x13, 0x30, 0x11, 0x06, 0x03,
+        -: 1212:        0x55, 0x04, 0x08, 0x0c, 0x0a, 0x53, 0x6f, 0x6d,
+        -: 1213:        0x65, 0x2d, 0x53, 0x74, 0x61, 0x74, 0x65, 0x31,
+        -: 1214:        0x21, 0x30, 0x1f, 0x06, 0x03, 0x55, 0x04, 0x0a,
+        -: 1215:        0x0c, 0x18, 0x49, 0x6e, 0x74, 0x65, 0x72, 0x6e,
+        -: 1216:        0x65, 0x74, 0x20, 0x57, 0x69, 0x64, 0x67, 0x69,
+        -: 1217:        0x74, 0x73, 0x20, 0x50, 0x74, 0x79, 0x20, 0x4c,
+        -: 1218:        0x74, 0x64, 0x31, 0x0f, 0x30, 0x0d, 0x06, 0x03,
+        -: 1219:        0x55, 0x04, 0x03, 0x0c, 0x06, 0x72, 0x6f, 0x6f,
+        -: 1220:        0x74, 0x43, 0x41, 0x02, 0x09, 0x00, 0x88, 0x43,
+        -: 1221:        0x29, 0xcb, 0xc2, 0xeb, 0x15, 0x9a, 0x30, 0x0b,
+        -: 1222:        0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03,
+        -: 1223:        0x04, 0x02, 0x01, 0xa0, 0x69, 0x30, 0x18, 0x06,
+        -: 1224:        0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01,
+        -: 1225:        0x09, 0x03, 0x31, 0x0b, 0x06, 0x09, 0x2a, 0x86,
+        -: 1226:        0x48, 0x86, 0xf7, 0x0d, 0x01, 0x07, 0x01, 0x30,
+        -: 1227:        0x1c, 0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7,
+        -: 1228:        0x0d, 0x01, 0x09, 0x05, 0x31, 0x0f, 0x17, 0x0d,
+        -: 1229:        0x32, 0x30, 0x31, 0x32, 0x31, 0x31, 0x30, 0x39,
+        -: 1230:        0x30, 0x30, 0x31, 0x33, 0x5a, 0x30, 0x2f, 0x06,
+        -: 1231:        0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01,
+        -: 1232:        0x09, 0x04, 0x31, 0x22, 0x04, 0x20, 0xb0, 0x80,
+        -: 1233:        0x22, 0xd3, 0x15, 0xcf, 0x1e, 0xb1, 0x2d, 0x26,
+        -: 1234:        0x65, 0xbd, 0xed, 0x0e, 0x6a, 0xf4, 0x06, 0x53,
+        -: 1235:        0xc0, 0xa0, 0xbe, 0x97, 0x52, 0x32, 0xfb, 0x49,
+        -: 1236:        0xbc, 0xbd, 0x02, 0x1c, 0xfc, 0x36, 0x30, 0x0d,
+        -: 1237:        0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d,
+        -: 1238:        0x01, 0x01, 0x01, 0x05, 0x00, 0x04, 0x82, 0x01,
+        -: 1239:        0x00, 0x37, 0x44, 0x39, 0x08, 0xb2, 0x19, 0x52,
+        -: 1240:        0x35, 0x9c, 0xd0, 0x67, 0x87, 0xae, 0xb8, 0x1c,
+        -: 1241:        0x80, 0xf4, 0x03, 0x29, 0x2e, 0xe3, 0x76, 0x4a,
+        -: 1242:        0xb0, 0x98, 0x10, 0x00, 0x9a, 0x30, 0xdb, 0x05,
+        -: 1243:        0x28, 0x53, 0x34, 0x31, 0x14, 0xbd, 0x87, 0xb9,
+        -: 1244:        0x4d, 0x45, 0x07, 0x97, 0xa3, 0x57, 0x0b, 0x7e,
+        -: 1245:        0xd1, 0x67, 0xfb, 0x4e, 0x0f, 0x5b, 0x90, 0xb2,
+        -: 1246:        0x6f, 0xe6, 0xce, 0x49, 0xdd, 0x72, 0x46, 0x71,
+        -: 1247:        0x26, 0xa1, 0x1b, 0x98, 0x23, 0x7d, 0x69, 0x73,
+        -: 1248:        0x84, 0xdc, 0xf9, 0xd2, 0x1c, 0x6d, 0xf6, 0xf5,
+        -: 1249:        0x17, 0x49, 0x6e, 0x9d, 0x4d, 0xf1, 0xe2, 0x43,
+        -: 1250:        0x29, 0x53, 0x55, 0xa5, 0x22, 0x1e, 0x89, 0x2c,
+        -: 1251:        0xaf, 0xf2, 0x43, 0x47, 0xd5, 0xfa, 0xad, 0xe7,
+        -: 1252:        0x89, 0x60, 0xbf, 0x96, 0x35, 0x6f, 0xc2, 0x99,
+        -: 1253:        0xb7, 0x55, 0xc5, 0xe3, 0x04, 0x25, 0x1b, 0xf6,
+        -: 1254:        0x7e, 0xf2, 0x2b, 0x14, 0xa9, 0x57, 0x96, 0xbe,
+        -: 1255:        0xbd, 0x6e, 0x95, 0x44, 0x94, 0xbd, 0xaf, 0x9a,
+        -: 1256:        0x6d, 0x77, 0x55, 0x5e, 0x6c, 0xf6, 0x32, 0x37,
+        -: 1257:        0xec, 0xef, 0xe5, 0x81, 0xb0, 0xe3, 0x35, 0xc7,
+        -: 1258:        0x86, 0xea, 0x47, 0x59, 0x38, 0xb6, 0x16, 0xfb,
+        -: 1259:        0x1d, 0x10, 0x55, 0x48, 0xb1, 0x44, 0x33, 0xde,
+        -: 1260:        0xf6, 0x29, 0xbe, 0xbf, 0xbc, 0x71, 0x3e, 0x49,
+        -: 1261:        0xba, 0xe7, 0x9f, 0x4d, 0x6c, 0xfb, 0xec, 0xd2,
+        -: 1262:        0xe0, 0x12, 0xa9, 0x7c, 0xc9, 0x9a, 0x7b, 0x85,
+        -: 1263:        0x83, 0xb8, 0xca, 0xdd, 0xf6, 0xb7, 0x15, 0x75,
+        -: 1264:        0x7b, 0x4a, 0x69, 0xcf, 0x0a, 0xc7, 0x80, 0x01,
+        -: 1265:        0xe7, 0x94, 0x16, 0x7f, 0x8d, 0x3c, 0xfa, 0x1f,
+        -: 1266:        0x05, 0x71, 0x76, 0x15, 0xb0, 0xf6, 0x61, 0x30,
+        -: 1267:        0x58, 0x16, 0xbe, 0x1b, 0xd1, 0x93, 0xc4, 0x1a,
+        -: 1268:        0x91, 0x0c, 0x48, 0xe2, 0x1c, 0x8e, 0xa5, 0xc5,
+        -: 1269:        0xa7, 0x81, 0x44, 0x48, 0x3b, 0x10, 0xc2, 0x74,
+        -: 1270:        0x07, 0xdf, 0xa8, 0xae, 0x57, 0xee, 0x7f, 0xe3,
+        -: 1271:        0x6a
+        -: 1272:    };
+        -: 1273:
+        2: 1274:    ret = TEST_ptr(bio = BIO_new_mem_buf(cms_data, sizeof(cms_data)))
+call    0 returned 2
+call    1 returned 2
+        2: 1275:        && TEST_ptr(cms = d2i_CMS_bio(bio, NULL))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1276:        && TEST_true(CMS_verify(cms, NULL, NULL, NULL, NULL, flags))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        4: 1277:        && TEST_ptr(content = CMS_SignedData_verify(cms->d.signedData, NULL, NULL, NULL,
+branch  0 taken 2 (fallthrough)
+branch  1 taken 0
+call    2 returned 2
+call    3 returned 2
+branch  4 taken 0 (fallthrough)
+branch  5 taken 2
+        -: 1278:                        NULL, NULL, flags, NULL, NULL));
+        2: 1279:    BIO_free(content);
+call    0 returned 2
+        2: 1280:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2: 1281:    BIO_free(bio);
+call    0 returned 2
+        2: 1282:    return ret && TEST_int_eq(ERR_peek_error(), 0);
+branch  0 taken 2 (fallthrough)
+branch  1 taken 0
+call    2 returned 2
+call    3 returned 2
+branch  4 taken 0 (fallthrough)
+branch  5 taken 2
+        -: 1283:}
+        -: 1284:
+function read_all called 2 returned 100% blocks executed 80%
+        2: 1285:static unsigned char *read_all(BIO *bio, long *p_len)
+        -: 1286:{
+        -: 1287:    const int step = 256;
+        -: 1288:    unsigned char *buf = NULL;
+        -: 1289:    unsigned char *tmp = NULL;
+        -: 1290:    int ret;
+        -: 1291:
+        2: 1292:    *p_len = 0;
+        -: 1293:    for (;;) {
+        2: 1294:        tmp = OPENSSL_realloc(buf, *p_len + step);
+call    0 returned 2
+        2: 1295:        if (tmp == NULL)
+branch  0 taken 2 (fallthrough)
+branch  1 taken 0
+        -: 1296:            break;
+        -: 1297:        buf = tmp;
+        2: 1298:        ret = BIO_read(bio, buf + *p_len, step);
+call    0 returned 2
+        2: 1299:        if (ret < 0)
+branch  0 taken 2 (fallthrough)
+branch  1 taken 0
+        -: 1300:            break;
+        -: 1301:
+        2: 1302:        if (LONG_MAX - ret < *p_len)
+branch  0 taken 2 (fallthrough)
+branch  1 taken 0
+        -: 1303:            break;
+        -: 1304:
+        2: 1305:        *p_len += ret;
+        -: 1306:
+        2: 1307:        if (ret < step)
+branch  0 taken 0
+branch  1 taken 2
+        -: 1308:            return buf;
+        -: 1309:    }
+        -: 1310:
+        -: 1311:    /* Error */
+    #####: 1312:    OPENSSL_free(buf);
+call    0 never executed
+    #####: 1313:    *p_len = 0;
+    #####: 1314:    return NULL;
+        -: 1315:}
+        -: 1316:
+function test_d2i_CMS_decode called 4 returned 100% blocks executed 80%
+        4: 1317:static int test_d2i_CMS_decode(const int idx)
+        -: 1318:{
+        -: 1319:    BIO *bio = NULL;
+        -: 1320:    CMS_ContentInfo *cms = NULL;
+        -: 1321:    unsigned char *buf = NULL;
+        4: 1322:    const unsigned char *tmp = NULL;
+        4: 1323:    long buf_len = 0;
+        -: 1324:    int ret = 0;
+        -: 1325:
+        4: 1326:    if (!TEST_ptr(bio = BIO_new_file(derin, "r")))
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0 (fallthrough)
+branch  3 taken 4
+    #####: 1327:        goto end;
+        -: 1328:
+        4: 1329:    switch (idx) {
+branch  0 taken 2
+branch  1 taken 2
+branch  2 taken 0
+        2: 1330:    case 0:
+        2: 1331:        if (!TEST_ptr(cms = d2i_CMS_bio(bio, NULL)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1332:            goto end;
+        -: 1333:        break;
+        2: 1334:    case 1:
+        2: 1335:        if (!TEST_ptr(buf = read_all(bio, &buf_len)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1336:            goto end;
+        2: 1337:        tmp = buf;
+        2: 1338:        if (!TEST_ptr(cms = d2i_CMS_ContentInfo(NULL, &tmp, buf_len)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1339:            goto end;
+        -: 1340:        break;
+        -: 1341:    }
+        -: 1342:
+        4: 1343:    if (!TEST_int_eq(ERR_peek_error(), 0))
+call    0 returned 4
+call    1 returned 4
+branch  2 taken 0 (fallthrough)
+branch  3 taken 4
+    #####: 1344:        goto end;
+        -: 1345:
+        -: 1346:    ret = 1;
+        4: 1347:end:
+        4: 1348:    CMS_ContentInfo_free(cms);
+call    0 returned 4
+        4: 1349:    BIO_free(bio);
+call    0 returned 4
+        4: 1350:    OPENSSL_free(buf);
+call    0 returned 4
+        -: 1351:
+        4: 1352:    return ret;
+        -: 1353:}
+        -: 1354:
+function test_CMS_set1_key_mem_leak called 2 returned 100% blocks executed 82%
+        2: 1355:static int test_CMS_set1_key_mem_leak(void)
+        -: 1356:{
+        -: 1357:    CMS_ContentInfo *cms;
+        2: 1358:    unsigned char key[32] = { 0 };
+        -: 1359:    int ret = 0;
+        -: 1360:
+        2: 1361:    if (!TEST_ptr(cms = CMS_ContentInfo_new()))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        -: 1362:        return 0;
+        -: 1363:
+        2: 1364:    if (!TEST_true(CMS_EncryptedData_set1_key(cms, EVP_aes_256_cbc(),
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 0 (fallthrough)
+branch  4 taken 2
+        -: 1365:            key, 32)))
+    #####: 1366:        goto end;
+        -: 1367:
+        2: 1368:    if (!TEST_true(CMS_EncryptedData_set1_key(cms, EVP_aes_128_cbc(),
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 0 (fallthrough)
+branch  4 taken 2
+        -: 1369:            key, 16)))
+    #####: 1370:        goto end;
+        -: 1371:
+        -: 1372:    ret = 1;
+        2: 1373:end:
+        2: 1374:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2: 1375:    return ret;
+        -: 1376:}
+        -: 1377:
+function test_encrypted_data called 2 returned 100% blocks executed 83%
+        2: 1378:static int test_encrypted_data(void)
+        -: 1379:{
+        -: 1380:    const char *msg = "Hello world";
+        2: 1381:    BIO *msgbio = BIO_new_mem_buf(msg, (int)strlen(msg));
+call    0 returned 2
+        2: 1382:    uint8_t key[16] = { 0 };
+        -: 1383:    size_t keylen = 16;
+        -: 1384:    CMS_ContentInfo *cms;
+        2: 1385:    BIO *decryptbio = BIO_new(BIO_s_mem());
+call    0 returned 2
+call    1 returned 2
+        -: 1386:    char buf[80];
+        -: 1387:    int ret = 0;
+        -: 1388:
+        2: 1389:    cms = CMS_EncryptedData_encrypt(msgbio, EVP_aes_128_cbc(), key, keylen, SMIME_BINARY);
+call    0 returned 2
+call    1 returned 2
+        2: 1390:    if (!TEST_ptr(cms))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1391:        goto end;
+        -: 1392:
+        2: 1393:    if (!TEST_true(CMS_EncryptedData_decrypt(cms, key, keylen, NULL, decryptbio, SMIME_BINARY)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1394:        goto end;
+        -: 1395:
+        -: 1396:    /* Check we got the message we first started with */
+        2: 1397:    if (!TEST_int_eq(BIO_gets(decryptbio, buf, sizeof(buf)), (int)strlen(msg))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1398:        || !TEST_int_eq(strcmp(buf, msg), 0))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1399:        goto end;
+        -: 1400:
+        -: 1401:    ret = 1;
+        2: 1402:end:
+        2: 1403:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2: 1404:    BIO_free(msgbio);
+call    0 returned 2
+        2: 1405:    BIO_free(decryptbio);
+call    0 returned 2
+        2: 1406:    return ret;
+        -: 1407:}
+        -: 1408:
+function test_encrypted_data_aead called 2 returned 100% blocks executed 83%
+        2: 1409:static int test_encrypted_data_aead(void)
+        -: 1410:{
+        -: 1411:    const char *msg = "Hello world";
+        2: 1412:    BIO *msgbio = BIO_new_mem_buf(msg, (int)strlen(msg));
+call    0 returned 2
+        2: 1413:    uint8_t key[16] = { 0 };
+        -: 1414:    size_t keylen = 16;
+        -: 1415:    CMS_ContentInfo *cms;
+        2: 1416:    BIO *decryptbio = BIO_new(BIO_s_mem());
+call    0 returned 2
+call    1 returned 2
+        -: 1417:    int ret = 0;
+        -: 1418:
+        2: 1419:    cms = CMS_ContentInfo_new();
+call    0 returned 2
+        2: 1420:    if (!TEST_ptr(cms))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1421:        goto end;
+        -: 1422:
+        -: 1423:    /*
+        -: 1424:     * AEAD algorithms are not supported by the CMS EncryptedData so setting
+        -: 1425:     * the cipher to AES GCM 128 will result in a failure
+        -: 1426:     */
+        2: 1427:    if (!TEST_false(CMS_EncryptedData_set1_key(cms, EVP_aes_128_gcm(), key, keylen)))
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 0 (fallthrough)
+branch  4 taken 2
+    #####: 1428:        goto end;
+        -: 1429:
+        2: 1430:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        -: 1431:    cms = NULL;
+        -: 1432:
+        -: 1433:    /*
+        -: 1434:     * AEAD algorithms are not supported by the CMS EncryptedData so setting
+        -: 1435:     * the cipher to AES GCM 128 will result in a failure
+        -: 1436:     */
+        2: 1437:    cms = CMS_EncryptedData_encrypt(msgbio, EVP_aes_128_gcm(), key, keylen, SMIME_BINARY);
+call    0 returned 2
+call    1 returned 2
+        2: 1438:    if (!TEST_ptr_null(cms))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1439:        goto end;
+        -: 1440:
+        -: 1441:    ret = 1;
+        -: 1442:
+        2: 1443:end:
+        2: 1444:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2: 1445:    BIO_free(msgbio);
+call    0 returned 2
+        2: 1446:    BIO_free(decryptbio);
+call    0 returned 2
+        2: 1447:    return ret;
+        -: 1448:}
+        -: 1449:
+function test_cms_aesgcm_iv_too_long called 2 returned 100% blocks executed 75%
+        2: 1450:static int test_cms_aesgcm_iv_too_long(void)
+        -: 1451:{
+        -: 1452:    int ret = 0;
+        -: 1453:    BIO *cmsbio = NULL, *out = NULL;
+        -: 1454:    CMS_ContentInfo *cms = NULL;
+        -: 1455:    unsigned long err = 0;
+        -: 1456:
+        2: 1457:    if (!TEST_ptr(cmsbio = BIO_new_file(too_long_iv_cms_in, "r")))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1458:        goto end;
+        -: 1459:
+        2: 1460:    if (!TEST_ptr(cms = PEM_read_bio_CMS(cmsbio, NULL, NULL, NULL)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1461:        goto end;
+        -: 1462:
+        -: 1463:    /* Must fail cleanly (no crash) */
+        2: 1464:    if (!TEST_false(CMS_decrypt(cms, privkey, cert, NULL, out, 0)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1465:        goto end;
+        2: 1466:    err = ERR_peek_last_error();
+call    0 returned 2
+        2: 1467:    if (!TEST_ulong_ne(err, 0))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1468:        goto end;
+        2: 1469:    if (!TEST_int_eq(ERR_GET_LIB(err), ERR_LIB_CMS))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1470:        goto end;
+        2: 1471:    if (!TEST_int_eq(ERR_GET_REASON(err), CMS_R_CIPHER_PARAMETER_INITIALISATION_ERROR))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1472:        goto end;
+        -: 1473:
+        -: 1474:    ret = 1;
+        2: 1475:end:
+        2: 1476:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2: 1477:    BIO_free(cmsbio);
+call    0 returned 2
+        2: 1478:    BIO_free(out);
+call    0 returned 2
+        2: 1479:    return ret;
+        -: 1480:}
+        -: 1481:
+        -: 1482:/*
+        -: 1483: * CMS EnvelopedData with a single PasswordRecipientInfo using
+        -: 1484: * id-alg-PWRI-KEK and an AES-128-CFB key encryption cipher
+        -: 1485: * (1-byte effective block size).  The encryptedKey OCTET STRING is
+        -: 1486: * only two bytes long, so the wrapped key buffer is shorter than
+        -: 1487: * the seven octets read by the check-byte test in kek_unwrap_key().
+        -: 1488: * Prior to CVE-2026-9076 this triggered an out-of-bounds heap read;
+        -: 1489: * CMS_decrypt() must now fail cleanly.
+        -: 1490: */
+function test_pwri_kek_unwrap_short_encrypted_key called 2 returned 100% blocks executed 81%
+        2: 1491:static int test_pwri_kek_unwrap_short_encrypted_key(void)
+        -: 1492:{
+        -: 1493:    BIO *in = NULL;
+        -: 1494:    CMS_ContentInfo *cms = NULL;
+        -: 1495:    unsigned long err = 0;
+        -: 1496:    int ret = 0;
+        -: 1497:
+        2: 1498:    if (!TEST_ptr(in = BIO_new_file(pwri_kek_oob_der_in, "rb"))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1499:        || !TEST_ptr(cms = d2i_CMS_bio(in, NULL)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1500:        goto end;
+        -: 1501:
+        -: 1502:    /*
+        -: 1503:     * The unwrap is attempted eagerly inside CMS_decrypt_set1_password().
+        -: 1504:     * It must fail cleanly (no OOB read) and report CMS_R_UNWRAP_FAILURE.
+        -: 1505:     */
+        2: 1506:    if (!TEST_false(CMS_decrypt_set1_password(cms,
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+        -: 1507:            (unsigned char *)"password", -1)))
+    #####: 1508:        goto end;
+        -: 1509:
+        2: 1510:    err = ERR_peek_last_error();
+call    0 returned 2
+        2: 1511:    if (!TEST_int_eq(ERR_GET_LIB(err), ERR_LIB_CMS)
+call    0 returned 2
+branch  1 taken 2 (fallthrough)
+branch  2 taken 0
+        2: 1512:        || !TEST_int_eq(ERR_GET_REASON(err), CMS_R_UNWRAP_FAILURE))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1513:        goto end;
+        -: 1514:
+        2: 1515:    ERR_clear_error();
+call    0 returned 2
+        -: 1516:    ret = 1;
+        2: 1517:end:
+        2: 1518:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2: 1519:    BIO_free(in);
+call    0 returned 2
+        2: 1520:    return ret;
+        -: 1521:}
+        -: 1522:
+function test_pwri_kek_unwrap_no_iv_key called 2 returned 100% blocks executed 81%
+        2: 1523:static int test_pwri_kek_unwrap_no_iv_key(void)
+        -: 1524:{
+        -: 1525:    BIO *in = NULL;
+        -: 1526:    CMS_ContentInfo *cms = NULL;
+        -: 1527:    unsigned long err = 0;
+        -: 1528:    int ret = 0;
+        -: 1529:
+        2: 1530:    if (!TEST_ptr(in = BIO_new_file(pwri_kek_no_iv_in, "rb"))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1531:        || !TEST_ptr(cms = d2i_CMS_bio(in, NULL)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1532:        goto end;
+        -: 1533:
+        -: 1534:    /*
+        -: 1535:     * Due to the missing IV, the unwrap must fail with
+        -: 1536:     * CMS_R_CIPHER_PARAMETER_INITIALISATION_ERROR.
+        -: 1537:     */
+        2: 1538:    if (!TEST_false(CMS_decrypt_set1_password(cms,
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+        -: 1539:            (unsigned char *)"password", -1)))
+    #####: 1540:        goto end;
+        -: 1541:
+        2: 1542:    err = ERR_peek_last_error();
+call    0 returned 2
+        2: 1543:    if (!TEST_int_eq(ERR_GET_LIB(err), ERR_LIB_CMS)
+call    0 returned 2
+branch  1 taken 2 (fallthrough)
+branch  2 taken 0
+        2: 1544:        || !TEST_int_eq(ERR_GET_REASON(err),
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+        -: 1545:            CMS_R_CIPHER_PARAMETER_INITIALISATION_ERROR))
+    #####: 1546:        goto end;
+        -: 1547:
+        2: 1548:    ERR_clear_error();
+call    0 returned 2
+        -: 1549:    ret = 1;
+        2: 1550:end:
+        2: 1551:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2: 1552:    BIO_free(in);
+call    0 returned 2
+        2: 1553:    return ret;
+        -: 1554:}
+        -: 1555:
+        -: 1556:#if !defined(OPENSSL_NO_EC) && !defined(OPENSSL_NO_X963KDF)
+        -: 1557:/*
+        -: 1558: * CVE-2026-63072: CMS_decrypt() with a KeyAgreeRecipientInfo naming an
+        -: 1559: * id-aesNNN-wrap-pad key-wrap OID. AES-WRAP-PAD unwrap cleanses inlen bytes of
+        -: 1560: * the output buffer on every RFC 5649 integrity-failure path, and CMS sizes
+        -: 1561: * that buffer from the cipher's length query.
+        -: 1562: *
+        -: 1563: * Build a valid ECDH KARI message (non-padded id-aes256-wrap), flip the single
+        -: 1564: * OID byte that turns it into id-aes256-wrap-pad (key length unchanged), and
+        -: 1565: * decrypt with the matching private key. The unwrap must fail its integrity
+        -: 1566: * check without writing past the CMS-allocated buffer and CMS_decrypt() must
+        -: 1567: * fail cleanly. Under a memory-checking build the overflow is flagged directly.
+        -: 1568: */
+function test_kari_wrap_pad_unwrap_overflow called 2 returned 100% blocks executed 86%
+        2: 1569:static int test_kari_wrap_pad_unwrap_overflow(void)
+        -: 1570:{
+        -: 1571:    /* DER encoding of the id-aes256-wrap OID (2.16.840.1.101.3.4.1.45). */
+        -: 1572:    static const unsigned char aes256_wrap_oid[] = {
+        -: 1573:        0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x01, 0x2d
+        -: 1574:    };
+        -: 1575:    int ret = 0;
+        2: 1576:    X509 *eccert = NULL;
+        2: 1577:    EVP_PKEY *eckey = NULL;
+        -: 1578:    BIO *certbio = NULL, *keybio = NULL, *msgbio = NULL, *outbio = NULL;
+        -: 1579:    STACK_OF(X509) *recips = NULL;
+        -: 1580:    CMS_ContentInfo *cms = NULL, *cms2 = NULL;
+        2: 1581:    unsigned char *der = NULL;
+        -: 1582:    const unsigned char *p;
+        -: 1583:    int derlen, i, patched = 0;
+        -: 1584:    const char *msg = "secret content for kari";
+        -: 1585:
+        2: 1586:    if ((certbio = BIO_new_file(ec_recip_in, "r")) == NULL
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+        2: 1587:        || PEM_read_bio_X509(certbio, &eccert, NULL, NULL) == NULL
+call    0 returned 2
+branch  1 taken 0
+branch  2 taken 2 (fallthrough)
+        2: 1588:        || (keybio = BIO_new_file(ec_recip_in, "r")) == NULL
+call    0 returned 2
+branch  1 taken 0
+branch  2 taken 2 (fallthrough)
+        2: 1589:        || PEM_read_bio_PrivateKey(keybio, &eckey, NULL, NULL) == NULL) {
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1590:        goto end;
+        -: 1591:    }
+        -: 1592:
+        2: 1593:    if (!TEST_ptr(recips = sk_X509_new_null())
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+call    3 returned 2
+call    4 returned 2
+branch  5 taken 2 (fallthrough)
+branch  6 taken 0
+        2: 1594:        || !TEST_int_gt(sk_X509_push(recips, eccert), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1595:        goto end;
+        -: 1596:
+        -: 1597:    /* Build a normal ECDH KARI message; it uses non-padded id-aes256-wrap. */
+        2: 1598:    if (!TEST_ptr(msgbio = BIO_new_mem_buf(msg, (int)strlen(msg)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1599:        || !TEST_ptr(cms = CMS_encrypt(recips, msgbio, EVP_aes_256_cbc(),
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 0 (fallthrough)
+branch  4 taken 2
+        -: 1600:                         CMS_BINARY)))
+    #####: 1601:        goto end;
+        -: 1602:
+        2: 1603:    if (!TEST_int_gt(derlen = i2d_CMS_ContentInfo(cms, &der), 0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1604:        goto end;
+        -: 1605:
+        -: 1606:    /* Swap id-aes256-wrap -> id-aes256-wrap-pad (0x2d -> 0x30). */
+      270: 1607:    for (i = 0; i + (int)sizeof(aes256_wrap_oid) <= derlen; i++) {
+branch  0 taken 270
+branch  1 taken 0 (fallthrough)
+      270: 1608:        if (memcmp(der + i, aes256_wrap_oid, sizeof(aes256_wrap_oid)) == 0) {
+branch  0 taken 2 (fallthrough)
+branch  1 taken 268
+        2: 1609:            der[i + sizeof(aes256_wrap_oid) - 1] = 0x30;
+        -: 1610:            patched = 1;
+        2: 1611:            break;
+        -: 1612:        }
+        -: 1613:    }
+        2: 1614:    if (!TEST_true(patched))
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1615:        goto end;
+        -: 1616:
+        2: 1617:    p = der;
+        2: 1618:    if (!TEST_ptr(cms2 = d2i_CMS_ContentInfo(NULL, &p, derlen)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1619:        goto end;
+        -: 1620:
+        -: 1621:    /*
+        -: 1622:     * The wrap-pad unwrap fails the AIV check without writing past the
+        -: 1623:     * CMS-allocated buffer, and CMS_decrypt() must fail cleanly.
+        -: 1624:     */
+        2: 1625:    if (!TEST_ptr(outbio = BIO_new(BIO_s_mem()))
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+branch  3 taken 2 (fallthrough)
+branch  4 taken 0
+        2: 1626:        || !TEST_false(CMS_decrypt(cms2, eckey, eccert, NULL, outbio, 0)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1627:        goto end;
+        -: 1628:
+        -: 1629:    ret = 1;
+        2: 1630:end:
+        2: 1631:    ERR_clear_error();
+call    0 returned 2
+        2: 1632:    OPENSSL_free(der);
+call    0 returned 2
+        2: 1633:    sk_X509_free(recips);
+call    0 returned 2
+        2: 1634:    CMS_ContentInfo_free(cms);
+call    0 returned 2
+        2: 1635:    CMS_ContentInfo_free(cms2);
+call    0 returned 2
+        2: 1636:    BIO_free(certbio);
+call    0 returned 2
+        2: 1637:    BIO_free(keybio);
+call    0 returned 2
+        2: 1638:    BIO_free(msgbio);
+call    0 returned 2
+        2: 1639:    BIO_free(outbio);
+call    0 returned 2
+        2: 1640:    X509_free(eccert);
+call    0 returned 2
+        2: 1641:    EVP_PKEY_free(eckey);
+call    0 returned 2
+        2: 1642:    return ret;
+        -: 1643:}
+        -: 1644:#endif
+        -: 1645:
+function test_get_options called 2 returned 100% blocks executed 100%
+        2: 1646:OPT_TEST_DECLARE_USAGE("certfile privkeyfile derfile tooLongIVpem pwriKekOobDer"
+        -: 1647:                       " pwriKekNoIv ecrecip certfile2 privkeyfile2"
+        -: 1648:                       " [ed448certfile ed448privkeyfile]\n")
+        -: 1649:
+function setup_tests called 2 returned 100% blocks executed 88%
+        2: 1650:int setup_tests(void)
+        -: 1651:{
+        -: 1652:    char *certin = NULL, *privkeyin = NULL;
+        -: 1653:    char *ed448_certin = NULL, *ed448_privkeyin = NULL;
+        -: 1654:    char *certin2 = NULL, *privkeyin2 = NULL;
+        -: 1655:
+        2: 1656:    if (!test_skip_common_options()) {
+call    0 returned 2
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2
+    #####: 1657:        TEST_error("Error parsing test options\n");
+call    0 never executed
+    #####: 1658:        return 0;
+        -: 1659:    }
+        -: 1660:
+        2: 1661:    if (!TEST_ptr(certin = test_get_argument(0))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1662:        || !TEST_ptr(privkeyin = test_get_argument(1))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1663:        || !TEST_ptr(derin = test_get_argument(2))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1664:        || !TEST_ptr(too_long_iv_cms_in = test_get_argument(3))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1665:        || !TEST_ptr(pwri_kek_oob_der_in = test_get_argument(4))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1666:        || !TEST_ptr(pwri_kek_no_iv_in = test_get_argument(5))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1667:        || !TEST_ptr(ec_recip_in = test_get_argument(6))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1668:        || !TEST_ptr(certin2 = test_get_argument(7))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1669:        || !TEST_ptr(privkeyin2 = test_get_argument(8)))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1670:        return 0;
+        -: 1671:
+        2: 1672:    if (!TEST_ptr(cert = load_cert_pem(certin, NULL))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1673:        || !TEST_ptr(privkey = load_pkey_pem(privkeyin, NULL))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1674:        || !TEST_ptr(cert2 = load_cert_pem(certin2, NULL))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1675:        || !TEST_ptr(privkey2 = load_pkey_pem(privkeyin2, NULL))) {
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1676:        X509_free(cert);
+call    0 never executed
+    #####: 1677:        cert = NULL;
+    #####: 1678:        EVP_PKEY_free(privkey);
+call    0 never executed
+    #####: 1679:        privkey = NULL;
+    #####: 1680:        X509_free(cert2);
+call    0 never executed
+    #####: 1681:        cert2 = NULL;
+    #####: 1682:        EVP_PKEY_free(privkey2);
+call    0 never executed
+    #####: 1683:        privkey2 = NULL;
+    #####: 1684:        return 0;
+        -: 1685:    }
+        -: 1686:
+        2: 1687:    if (test_get_argument_count() >= 11) {
+call    0 returned 2
+branch  1 taken 2 (fallthrough)
+branch  2 taken 0
+        2: 1688:        ed448_certin = test_get_argument(9);
+call    0 returned 2
+        2: 1689:        ed448_privkeyin = test_get_argument(10);
+call    0 returned 2
+        -: 1690:
+        2: 1691:        if (!TEST_ptr(ed448_cert = load_cert_pem(ed448_certin, NULL))
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1692:            || !TEST_ptr(ed448_privkey = load_pkey_pem(ed448_privkeyin, NULL))) {
+call    0 returned 2
+call    1 returned 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+    #####: 1693:            X509_free(ed448_cert);
+call    0 never executed
+    #####: 1694:            ed448_cert = NULL;
+    #####: 1695:            EVP_PKEY_free(ed448_privkey);
+call    0 never executed
+    #####: 1696:            ed448_privkey = NULL;
+    #####: 1697:            return 0;
+        -: 1698:        }
+        -: 1699:    }
+        -: 1700:
+        2: 1701:    ADD_TEST(test_encrypt_decrypt_aes_cbc);
+call    0 returned 2
+        2: 1702:    ADD_TEST(test_encrypt_decrypt_aes_cfb);
+call    0 returned 2
+        2: 1703:    ADD_TEST(test_encrypt_rejects_ambiguous_cfb_oid);
+call    0 returned 2
+        2: 1704:    ADD_TEST(test_encrypt_decrypt_aes_128_gcm);
+call    0 returned 2
+        2: 1705:    ADD_TEST(test_encrypt_decrypt_aes_192_gcm);
+call    0 returned 2
+        2: 1706:    ADD_TEST(test_encrypt_decrypt_aes_256_gcm);
+call    0 returned 2
+        2: 1707:    ADD_TEST(test_non_aead_on_auth_envelope_enc);
+call    0 returned 2
+        2: 1708:    ADD_TEST(test_non_aead_on_auth_envelope_dec);
+call    0 returned 2
+        2: 1709:    ADD_TEST(test_short_mac_on_auth_envelope_data);
+call    0 returned 2
+        2: 1710:    ADD_TEST(test_CMS_add_standard_smimecap_ex);
+call    0 returned 2
+        2: 1711:    ADD_TEST(test_decrypt_with_wrong_key);
+call    0 returned 2
+        2: 1712:    ADD_ALL_TESTS(test_decrypt_key_length, 8);
+call    0 returned 2
+        2: 1713:    ADD_TEST(test_CMS_add1_cert);
+call    0 returned 2
+        2: 1714:    ADD_TEST(test_CMS_SignerInfo_verify_sigalg_oid);
+call    0 returned 2
+        2: 1715:    ADD_TEST(test_CMS_verify_result_no_signer_cert);
+call    0 returned 2
+        2: 1716:    ADD_TEST(test_CMS_verify_result_partial_signer_cert);
+call    0 returned 2
+        2: 1717:    ADD_TEST(test_CMS_verify_reused_after_check_content_failure);
+call    0 returned 2
+        2: 1718:    ADD_TEST(test_CMS_verify_result_partial_independence);
+call    0 returned 2
+        2: 1719:    ADD_TEST(test_d2i_CMS_bio_NULL);
+call    0 returned 2
+        2: 1720:    ADD_TEST(test_CMS_set1_key_mem_leak);
+call    0 returned 2
+        2: 1721:    ADD_TEST(test_encrypted_data);
+call    0 returned 2
+        2: 1722:    ADD_TEST(test_encrypted_data_aead);
+call    0 returned 2
+        2: 1723:    ADD_ALL_TESTS(test_d2i_CMS_decode, 2);
+call    0 returned 2
+        2: 1724:    ADD_TEST(test_cms_aesgcm_iv_too_long);
+call    0 returned 2
+        2: 1725:    ADD_TEST(test_pwri_kek_unwrap_short_encrypted_key);
+call    0 returned 2
+        2: 1726:    ADD_TEST(test_pwri_kek_unwrap_no_iv_key);
+call    0 returned 2
+        2: 1727:    if (ed448_cert != NULL && ed448_privkey != NULL) {
+branch  0 taken 2 (fallthrough)
+branch  1 taken 0
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+        2: 1728:        ADD_TEST(test_CMS_add1_signer_ed448_signed_attrs);
+call    0 returned 2
+        2: 1729:        ADD_TEST(test_CMS_add1_signer_ed448_signed_attrs_md);
+call    0 returned 2
+        2: 1730:        ADD_TEST(test_CMS_add1_signer_ed448_noattr);
+call    0 returned 2
+        -: 1731:    }
+        -: 1732:
+        -: 1733:#if !defined(OPENSSL_NO_EC) && !defined(OPENSSL_NO_X963KDF)
+        2: 1734:    ADD_TEST(test_kari_wrap_pad_unwrap_overflow);
+call    0 returned 2
+        -: 1735:#endif
+        2: 1736:    return 1;
+        -: 1737:}
+        -: 1738:
+function cleanup_tests called 2 returned 100% blocks executed 100%
+        2: 1739:void cleanup_tests(void)
+        -: 1740:{
+        2: 1741:    X509_free(cert);
+call    0 returned 2
+        2: 1742:    EVP_PKEY_free(privkey);
+call    0 returned 2
+        2: 1743:    X509_free(ed448_cert);
+call    0 returned 2
+        2: 1744:    EVP_PKEY_free(ed448_privkey);
+call    0 returned 2
+        2: 1745:    X509_free(cert2);
+call    0 returned 2
+        2: 1746:    EVP_PKEY_free(privkey2);
+call    0 returned 2
+        2: 1747:}

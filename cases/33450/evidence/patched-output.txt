@@ -1,0 +1,2 @@
+calling EC_GROUP_cmp()
+EC_GROUP_cmp() returned 0

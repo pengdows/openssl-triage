@@ -1,0 +1,1320 @@
+# The results of this test will end up in test-runs/test_cms
+1..43
+#     # Subtest: ../../test/pkcs7_test
+#     1..7
+#     ok 1 - pkcs7_issuer_and_serial_negative_idx_test
+#     ok 2 - pkcs7_verify_test
+#     ok 3 - pkcs7_inner_content_verify_test
+#     ok 4 - pkcs7_stream_enveloped_no_content_test
+#     ok 5 - pkcs7_stream_enveloped_signed_no_content_test
+#     ok 6 - test_pkcs7_smimecap
+#     ok 7 - pkcs7_stream_non_data_test
+../../util/wrap.pl ../../test/pkcs7_test ../../test/certs/servercert.pem ../../test/certs/serverkey.pem => 0
+ok 1 - test pkcs7
+# Subtest: CMS => PKCS#7 compatibility tests
+    1..20
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-1.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-1.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-1.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-1.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-1.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-1.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-1.txt
+    ok 1 - signed content DER format, RSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -text -out cms2pkcs7-2.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -text -out cms2pkcs7-2.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-2.cms -inform DER -text -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-2.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-2.cms -inform DER -text -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-2.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-2.txt
+    ok 2 - signed text content DER format, RSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-3.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-3.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-3.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-3.txt -content ../../test/smcont.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-3.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-3.txt -content ../../test/smcont.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-3.txt
+    ok 3 - signed detached content DER format, RSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-4.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-4.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-4.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-4.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-4.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-4.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-4.txt
+    ok 4 - signed content test streaming BER format, RSA
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-5.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-5.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-5.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-5.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-5.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-5.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-5.txt
+    ok 5 - signed content DER format, two RSA signers with explicit -inkey
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smdsa1.pem -out cms2pkcs7-6.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smdsa1.pem -out cms2pkcs7-6.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-6.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-6.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-6.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-6.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-6.txt
+    ok 6 - signed content DER format, DSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out cms2pkcs7-7.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out cms2pkcs7-7.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-7.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-7.txt -content ../../test/smcont.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-7.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-7.txt -content ../../test/smcont.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-7.txt
+    ok 7 - signed detached content DER format, DSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out cms2pkcs7-8.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out cms2pkcs7-8.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -resign -in cms2pkcs7-8.cms -inform DER -outform DER -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-82.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -resign -in cms2pkcs7-8.cms -inform DER -outform DER -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-82.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-82.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-8.txt -content ../../test/smcont.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-82.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-8.txt -content ../../test/smcont.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-8.txt
+    ok 8 - signed detached content DER format, add RSA signer (with DSA existing)
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smdsa1.pem -out cms2pkcs7-9.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smdsa1.pem -out cms2pkcs7-9.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-9.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-9.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-9.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-9.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-9.txt
+    ok 9 - signed content test streaming BER format, DSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out cms2pkcs7-10.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out cms2pkcs7-10.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-10.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-10.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-10.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-10.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-10.txt
+    ok 10 - signed content test streaming BER format, 2 DSA and 2 RSA keys
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -noattr -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out cms2pkcs7-11.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -noattr -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out cms2pkcs7-11.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-11.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-11.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-11.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-11.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-11.txt
+    ok 11 - signed content test streaming BER format, 2 DSA and 2 RSA keys, no attributes
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-12.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-12.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-12.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-12.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-12.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-12.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-12.txt
+    ok 12 - signed content S/MIME format, RSA key SHA1
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont_zero.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-13.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont_zero.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2pkcs7-13.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-13.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-13.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-13.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-13.txt => 0
+    # Checking for zero-length file
+    ok 13 - signed zero-length content S/MIME format, RSA key SHA1
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2pkcs7-14.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2pkcs7-14.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-14.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-14.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-14.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-14.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-14.txt
+    ok 14 - signed content test streaming S/MIME format, 2 DSA and 2 RSA keys
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2pkcs7-15.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2pkcs7-15.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-15.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-15.txt
+Verification successful
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in cms2pkcs7-15.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2pkcs7-15.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-15.txt
+    ok 15 - signed content test streaming multipart S/MIME format, 2 DSA and 2 RSA keys
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2pkcs7-16.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2pkcs7-16.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2pkcs7-16.cms -out cms2pkcs7-16.txt
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2pkcs7-16.cms -out cms2pkcs7-16.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-16.txt
+    ok 16 - enveloped content test streaming S/MIME format, DES, 3 recipients
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -text -out cms2pkcs7-17.cms ../../test/smime-certs/smrsa1.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -text -out cms2pkcs7-17.cms ../../test/smime-certs/smrsa1.pem => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2pkcs7-17.cms -text -out cms2pkcs7-17.txt
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2pkcs7-17.cms -text -out cms2pkcs7-17.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-17.txt
+    ok 17 - enveloped text content streaming S/MIME format, DES, 1 recipient
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2pkcs7-18.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2pkcs7-18.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3.pem -in cms2pkcs7-18.cms -out cms2pkcs7-18.txt
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3.pem -in cms2pkcs7-18.cms -out cms2pkcs7-18.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-18.txt
+    ok 18 - enveloped content test streaming S/MIME format, DES, 3 recipients, 3rd used
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2pkcs7-19.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3-cert.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2pkcs7-19.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3-cert.pem => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -in cms2pkcs7-19.cms -out cms2pkcs7-19.txt
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -in cms2pkcs7-19.cms -out cms2pkcs7-19.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-19.txt
+    ok 19 - enveloped content test streaming S/MIME format, DES, 3 recipients, cert and key files used
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -aes256 -stream -out cms2pkcs7-20.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -aes256 -stream -out cms2pkcs7-20.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2pkcs7-20.cms -out cms2pkcs7-20.txt
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2pkcs7-20.cms -out cms2pkcs7-20.txt => 0
+    # Comparing ../../test/smcont.txt with cms2pkcs7-20.txt
+    ok 20 - enveloped content test streaming S/MIME format, AES-256 cipher, 3 recipients
+ok 2 - CMS => PKCS\#7 compatibility tests
+# 
+# Subtest: CMS <= PKCS#7 compatibility tests
+    1..20
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-1.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-1.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-1.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-1.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-1.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-1.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-1.txt
+    ok 1 - signed content DER format, RSA key
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -text -out pkcs72cms-2.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -text -out pkcs72cms-2.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-2.cms -inform DER -text -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-2.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-2.cms -inform DER -text -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-2.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-2.txt
+    ok 2 - signed text content DER format, RSA key
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-3.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-3.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-3.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-3.txt -content ../../test/smcont.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-3.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-3.txt -content ../../test/smcont.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-3.txt
+    ok 3 - signed detached content DER format, RSA key
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-4.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-4.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-4.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-4.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-4.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-4.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-4.txt
+    ok 4 - signed content test streaming BER format, RSA
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-5.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-5.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-5.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-5.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-5.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-5.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-5.txt
+    ok 5 - signed content DER format, two RSA signers with explicit -inkey
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smdsa1.pem -out pkcs72cms-6.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smdsa1.pem -out pkcs72cms-6.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-6.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-6.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-6.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-6.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-6.txt
+    ok 6 - signed content DER format, DSA key
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out pkcs72cms-7.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out pkcs72cms-7.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-7.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-7.txt -content ../../test/smcont.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-7.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-7.txt -content ../../test/smcont.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-7.txt
+    ok 7 - signed detached content DER format, DSA key
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out pkcs72cms-8.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out pkcs72cms-8.cms => 0
+    # CMD: openssl smime -provider-path ../../providers -provider default -resign -in pkcs72cms-8.cms -inform DER -outform DER -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-82.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -resign -in pkcs72cms-8.cms -inform DER -outform DER -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-82.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-82.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-8.txt -content ../../test/smcont.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-82.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-8.txt -content ../../test/smcont.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-8.txt
+    ok 8 - signed detached content DER format, add RSA signer (with DSA existing)
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smdsa1.pem -out pkcs72cms-9.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smdsa1.pem -out pkcs72cms-9.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-9.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-9.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-9.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-9.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-9.txt
+    ok 9 - signed content test streaming BER format, DSA key
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out pkcs72cms-10.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out pkcs72cms-10.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-10.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-10.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-10.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-10.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-10.txt
+    ok 10 - signed content test streaming BER format, 2 DSA and 2 RSA keys
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -noattr -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out pkcs72cms-11.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -noattr -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out pkcs72cms-11.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-11.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-11.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-11.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-11.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-11.txt
+    ok 11 - signed content test streaming BER format, 2 DSA and 2 RSA keys, no attributes
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-12.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-12.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-12.cms -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-12.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-12.cms -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-12.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-12.txt
+    ok 12 - signed content S/MIME format, RSA key SHA1
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont_zero.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-13.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont_zero.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out pkcs72cms-13.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-13.cms -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-13.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-13.cms -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-13.txt => 0
+    # Checking for zero-length file
+    ok 13 - signed zero-length content S/MIME format, RSA key SHA1
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out pkcs72cms-14.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out pkcs72cms-14.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-14.cms -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-14.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-14.cms -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-14.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-14.txt
+    ok 14 - signed content test streaming S/MIME format, 2 DSA and 2 RSA keys
+    # CMD: openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out pkcs72cms-15.cms
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out pkcs72cms-15.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-15.cms -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-15.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in pkcs72cms-15.cms -CAfile ../../test/smime-certs/smroot.pem -out pkcs72cms-15.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-15.txt
+    ok 15 - signed content test streaming multipart S/MIME format, 2 DSA and 2 RSA keys
+    # CMD: openssl smime -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out pkcs72cms-16.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out pkcs72cms-16.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in pkcs72cms-16.cms -out pkcs72cms-16.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in pkcs72cms-16.cms -out pkcs72cms-16.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-16.txt
+    ok 16 - enveloped content test streaming S/MIME format, DES, 3 recipients
+    # CMD: openssl smime -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -text -out pkcs72cms-17.cms ../../test/smime-certs/smrsa1.pem
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -text -out pkcs72cms-17.cms ../../test/smime-certs/smrsa1.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in pkcs72cms-17.cms -text -out pkcs72cms-17.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in pkcs72cms-17.cms -text -out pkcs72cms-17.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-17.txt
+    ok 17 - enveloped text content streaming S/MIME format, DES, 1 recipient
+    # CMD: openssl smime -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out pkcs72cms-18.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out pkcs72cms-18.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3.pem -in pkcs72cms-18.cms -out pkcs72cms-18.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3.pem -in pkcs72cms-18.cms -out pkcs72cms-18.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-18.txt
+    ok 18 - enveloped content test streaming S/MIME format, DES, 3 recipients, 3rd used
+    # CMD: openssl smime -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out pkcs72cms-19.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3-cert.pem
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out pkcs72cms-19.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3-cert.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -in pkcs72cms-19.cms -out pkcs72cms-19.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -in pkcs72cms-19.cms -out pkcs72cms-19.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-19.txt
+    ok 19 - enveloped content test streaming S/MIME format, DES, 3 recipients, cert and key files used
+    # CMD: openssl smime -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -aes256 -stream -out pkcs72cms-20.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -aes256 -stream -out pkcs72cms-20.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in pkcs72cms-20.cms -out pkcs72cms-20.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in pkcs72cms-20.cms -out pkcs72cms-20.txt => 0
+    # Comparing ../../test/smcont.txt with pkcs72cms-20.txt
+    ok 20 - enveloped content test streaming S/MIME format, AES-256 cipher, 3 recipients
+ok 3 - CMS <= PKCS\#7 compatibility tests
+# 
+# Subtest: CMS <=> CMS consistency tests
+    1..36
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-1.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-1.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-1.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-1.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-1.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-1.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-1.txt
+    ok 1 - signed content DER format, RSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -text -out cms2cms-1-2.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -text -out cms2cms-1-2.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-2.cms -inform DER -text -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-2.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-2.cms -inform DER -text -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-2.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-2.txt
+    ok 2 - signed text content DER format, RSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-3.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-3.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-3.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-3.txt -content ../../test/smcont.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-3.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-3.txt -content ../../test/smcont.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-3.txt
+    ok 3 - signed detached content DER format, RSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-4.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-4.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-4.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-4.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-4.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-4.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-4.txt
+    ok 4 - signed content test streaming BER format, RSA
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-5.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-5.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-5.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-5.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-5.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-5.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-5.txt
+    ok 5 - signed content DER format, two RSA signers with explicit -inkey
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smdsa1.pem -out cms2cms-1-6.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -signer ../../test/smime-certs/smdsa1.pem -out cms2cms-1-6.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-6.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-6.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-6.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-6.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-6.txt
+    ok 6 - signed content DER format, DSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out cms2cms-1-7.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out cms2cms-1-7.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-7.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-7.txt -content ../../test/smcont.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-7.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-7.txt -content ../../test/smcont.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-7.txt
+    ok 7 - signed detached content DER format, DSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out cms2cms-1-8.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smdsa1.pem -out cms2cms-1-8.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -resign -in cms2cms-1-8.cms -inform DER -outform DER -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-82.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -resign -in cms2cms-1-8.cms -inform DER -outform DER -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-82.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-82.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-8.txt -content ../../test/smcont.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-82.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-8.txt -content ../../test/smcont.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-8.txt
+    ok 8 - signed detached content DER format, add RSA signer (with DSA existing)
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smdsa1.pem -out cms2cms-1-9.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smdsa1.pem -out cms2cms-1-9.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-9.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-9.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-9.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-9.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-9.txt
+    ok 9 - signed content test streaming BER format, DSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out cms2cms-1-10.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out cms2cms-1-10.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-10.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-10.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-10.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-10.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-10.txt
+    ok 10 - signed content test streaming BER format, 2 DSA and 2 RSA keys
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -noattr -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out cms2cms-1-11.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -noattr -nodetach -stream -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -out cms2cms-1-11.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-11.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-11.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-11.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-11.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-11.txt
+    ok 11 - signed content test streaming BER format, 2 DSA and 2 RSA keys, no attributes
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-12.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-12.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-12.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-12.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-12.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-12.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-12.txt
+    ok 12 - signed content S/MIME format, RSA key SHA1
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont_zero.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-13.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont_zero.txt -md sha1 -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms2cms-1-13.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-13.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-13.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-13.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-13.txt => 0
+    # Checking for zero-length file
+    ok 13 - signed zero-length content S/MIME format, RSA key SHA1
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2cms-1-14.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2cms-1-14.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-14.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-14.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-14.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-14.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-14.txt
+    ok 14 - signed content test streaming S/MIME format, 2 DSA and 2 RSA keys
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2cms-1-15.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2cms-1-15.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-15.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-15.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-1-15.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-1-15.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-15.txt
+    ok 15 - signed content test streaming multipart S/MIME format, 2 DSA and 2 RSA keys
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-1-16.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-1-16.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-1-16.cms -out cms2cms-1-16.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-1-16.cms -out cms2cms-1-16.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-16.txt
+    ok 16 - enveloped content test streaming S/MIME format, DES, 3 recipients
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -text -out cms2cms-1-17.cms ../../test/smime-certs/smrsa1.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -text -out cms2cms-1-17.cms ../../test/smime-certs/smrsa1.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-1-17.cms -text -out cms2cms-1-17.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-1-17.cms -text -out cms2cms-1-17.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-17.txt
+    ok 17 - enveloped text content streaming S/MIME format, DES, 1 recipient
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-1-18.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-1-18.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3.pem -in cms2cms-1-18.cms -out cms2cms-1-18.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3.pem -in cms2cms-1-18.cms -out cms2cms-1-18.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-18.txt
+    ok 18 - enveloped content test streaming S/MIME format, DES, 3 recipients, 3rd used
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-1-19.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3-cert.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-1-19.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3-cert.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -in cms2cms-1-19.cms -out cms2cms-1-19.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa3-cert.pem -inkey ../../test/smime-certs/smrsa3-key.pem -in cms2cms-1-19.cms -out cms2cms-1-19.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-19.txt
+    ok 19 - enveloped content test streaming S/MIME format, DES, 3 recipients, cert and key files used
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -aes256 -stream -out cms2cms-1-20.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -aes256 -stream -out cms2cms-1-20.cms ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-1-20.cms -out cms2cms-1-20.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-1-20.cms -out cms2cms-1-20.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-1-20.txt
+    ok 20 - enveloped content test streaming S/MIME format, AES-256 cipher, 3 recipients
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -keyid -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2cms-2-1.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -keyid -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2cms-2-1.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-2-1.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-2-1.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-2-1.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-2-1.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-1.txt
+    ok 21 - signed content test streaming BER format, 2 DSA and 2 RSA keys, keyid
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2cms-2-2.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -signer ../../test/smime-certs/smrsa2.pem -signer ../../test/smime-certs/smdsa1.pem -signer ../../test/smime-certs/smdsa2.pem -stream -out cms2cms-2-2.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-2-2.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-2-2.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-2-2.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-2-2.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-2.txt
+    ok 22 - signed content test streaming PEM format, 2 DSA and 2 RSA keys
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -receipt_request_to test@openssl.org -receipt_request_all -out cms2cms-2-3.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -receipt_request_to test@openssl.org -receipt_request_all -out cms2cms-2-3.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-2-3.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-2-3.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-2-3.cms -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-2-3.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-3.txt
+    ok 23 - signed content MIME format, RSA key, signed receipt request
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -receipt_request_to test@openssl.org -receipt_request_all -out cms2cms-2-4.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -receipt_request_to test@openssl.org -receipt_request_all -out cms2cms-2-4.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign_receipt -in cms2cms-2-4.cms -signer ../../test/smime-certs/smrsa2.pem -out cms2cms-2-42.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign_receipt -in cms2cms-2-4.cms -signer ../../test/smime-certs/smrsa2.pem -out cms2cms-2-42.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify_receipt cms2cms-2-42.cms -in cms2cms-2-4.cms -CAfile ../../test/smime-certs/smroot.pem
+Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify_receipt cms2cms-2-42.cms -in cms2cms-2-4.cms -CAfile ../../test/smime-certs/smroot.pem => 0
+    ok 24 - signed receipt MIME format, RSA key
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-2-5.cms -keyid ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-2-5.cms -keyid ../../test/smime-certs/smrsa1.pem ../../test/smime-certs/smrsa2.pem ../../test/smime-certs/smrsa3.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-2-5.cms -out cms2cms-2-5.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-2-5.cms -out cms2cms-2-5.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-5.txt
+    ok 25 - enveloped content test streaming S/MIME format, DES, 3 recipients, keyid
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -outform PEM -aes128 -stream -out cms2cms-2-6.cms -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -outform PEM -aes128 -stream -out cms2cms-2-6.cms -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0 => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -in cms2cms-2-6.cms -out cms2cms-2-6.txt -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -in cms2cms-2-6.cms -out cms2cms-2-6.txt -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0 => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-6.txt
+    ok 26 - enveloped content test streaming PEM format, AES-256-CBC cipher, KEK
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -outform PEM -aes-128-gcm -stream -out cms2cms-2-7.cms -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -outform PEM -aes-128-gcm -stream -out cms2cms-2-7.cms -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0 => 0
+    # CMD: openssl cms -decrypt -in cms2cms-2-7.cms -out cms2cms-2-7.txt -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0
+../../util/wrap.pl ../../apps/openssl cms -decrypt -in cms2cms-2-7.cms -out cms2cms-2-7.txt -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0 => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-7.txt
+    ok 27 - enveloped content test streaming PEM format, AES-256-GCM cipher, KEK
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -outform PEM -aes-128-gcm -kekcipher aes-128-cbc -stream -out cms2cms-2-8.cms -pwri_password testtest
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -outform PEM -aes-128-gcm -kekcipher aes-128-cbc -stream -out cms2cms-2-8.cms -pwri_password testtest => 0
+    # CMD: openssl cms -decrypt -in cms2cms-2-8.cms -out cms2cms-2-8.txt -inform PEM -pwri_password testtest
+../../util/wrap.pl ../../apps/openssl cms -decrypt -in cms2cms-2-8.cms -out cms2cms-2-8.txt -inform PEM -pwri_password testtest => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-8.txt
+    ok 28 - enveloped content test streaming PEM format, AES-128-GCM cipher and AES-128-CBC KEK cipher, password
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -outform PEM -aes128 -stream -out cms2cms-2-9.cms -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -outform PEM -aes128 -stream -out cms2cms-2-9.cms -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0 => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -in cms2cms-2-9.cms -out cms2cms-2-9.txt -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -in cms2cms-2-9.cms -out cms2cms-2-9.txt -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-9.txt
+    ok 29 - enveloped content test streaming PEM format, KEK, key only
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -outform PEM -aes128 -stream -out cms2cms-2-10.cms -pwri_password testtest
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -outform PEM -aes128 -stream -out cms2cms-2-10.cms -pwri_password testtest => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -in cms2cms-2-10.cms -out cms2cms-2-10.txt -inform PEM -pwri_password testtest
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -in cms2cms-2-10.cms -out cms2cms-2-10.txt -inform PEM -pwri_password testtest => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-10.txt
+    ok 30 - enveloped content test streaming PEM format, AES-128-CBC cipher, password
+    # CMD: openssl cms -provider-path ../../providers -provider default -data_create -in ../../test/smcont.txt -outform PEM -nodetach -stream -out cms2cms-2-11.cms
+Warning: -nodetach option is ignored for non-signing operation
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -data_create -in ../../test/smcont.txt -outform PEM -nodetach -stream -out cms2cms-2-11.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -data_out -in cms2cms-2-11.cms -inform PEM -out cms2cms-2-11.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -data_out -in cms2cms-2-11.cms -inform PEM -out cms2cms-2-11.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-11.txt
+    ok 31 - data content test streaming PEM format
+    # CMD: openssl cms -provider-path ../../providers -provider default -provider legacy -EncryptedData_encrypt -in ../../test/smcont.txt -outform PEM -rc2 -secretkey 000102030405060708090A0B0C0D0E0F -stream -out cms2cms-2-12.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -provider legacy -EncryptedData_encrypt -in ../../test/smcont.txt -outform PEM -rc2 -secretkey 000102030405060708090A0B0C0D0E0F -stream -out cms2cms-2-12.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -provider legacy -EncryptedData_decrypt -in cms2cms-2-12.cms -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F -out cms2cms-2-12.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -provider legacy -EncryptedData_decrypt -in cms2cms-2-12.cms -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F -out cms2cms-2-12.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-12.txt
+    ok 32 - encrypted content test streaming PEM format, 128 bit RC2 key
+    # CMD: openssl cms -provider-path ../../providers -provider default -provider legacy -EncryptedData_encrypt -in ../../test/smcont.txt -outform PEM -rc2 -secretkey 0001020304 -stream -out cms2cms-2-13.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -provider legacy -EncryptedData_encrypt -in ../../test/smcont.txt -outform PEM -rc2 -secretkey 0001020304 -stream -out cms2cms-2-13.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -provider legacy -EncryptedData_decrypt -in cms2cms-2-13.cms -inform PEM -secretkey 0001020304 -out cms2cms-2-13.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -provider legacy -EncryptedData_decrypt -in cms2cms-2-13.cms -inform PEM -secretkey 0001020304 -out cms2cms-2-13.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-13.txt
+    ok 33 - encrypted content test streaming PEM format, 40 bit RC2 key
+    # CMD: openssl cms -provider-path ../../providers -provider default -EncryptedData_encrypt -in ../../test/smcont.txt -outform PEM -des3 -secretkey 000102030405060708090A0B0C0D0E0F1011121314151617 -stream -out cms2cms-2-14.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -EncryptedData_encrypt -in ../../test/smcont.txt -outform PEM -des3 -secretkey 000102030405060708090A0B0C0D0E0F1011121314151617 -stream -out cms2cms-2-14.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -EncryptedData_decrypt -in cms2cms-2-14.cms -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F1011121314151617 -out cms2cms-2-14.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -EncryptedData_decrypt -in cms2cms-2-14.cms -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F1011121314151617 -out cms2cms-2-14.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-14.txt
+    ok 34 - encrypted content test streaming PEM format, triple DES key
+    # CMD: openssl cms -provider-path ../../providers -provider default -EncryptedData_encrypt -in ../../test/smcont.txt -outform PEM -aes128 -secretkey 000102030405060708090A0B0C0D0E0F -stream -out cms2cms-2-15.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -EncryptedData_encrypt -in ../../test/smcont.txt -outform PEM -aes128 -secretkey 000102030405060708090A0B0C0D0E0F -stream -out cms2cms-2-15.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -EncryptedData_decrypt -in cms2cms-2-15.cms -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F -out cms2cms-2-15.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -EncryptedData_decrypt -in cms2cms-2-15.cms -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F -out cms2cms-2-15.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-2-15.txt
+    ok 35 - encrypted content test streaming PEM format, 128 bit AES key
+    # CMD: openssl cms -provider-path ../../providers -provider default -EncryptedData_encrypt -in ../../test/smcont.txt -outform PEM -aes128 -secretkey 000102030405060708090A0B0C0D0E0F -stream -noout
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -EncryptedData_encrypt -in ../../test/smcont.txt -outform PEM -aes128 -secretkey 000102030405060708090A0B0C0D0E0F -stream -noout => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -help
+Usage: cms [options] [cert...]
+ -help                      Display this summary
+
+General options:
+ -in infile                 Input file
+ -out outfile               Output file
+ -config infile             Load a configuration file (this may load modules)
+
+Operation options:
+ -encrypt                   Encrypt message
+ -decrypt                   Decrypt encrypted message
+ -sign                      Sign message
+ -verify                    Verify signed message
+ -resign                    Resign a signed message
+ -sign_receipt              Generate a signed receipt for a message
+ -verify_receipt infile     Verify receipts; exit if receipt signatures do not verify
+ -digest val                Sign a pre-computed digest in hex notation
+ -digest_create             Create a CMS "DigestedData" object
+ -digest_verify             Verify a CMS "DigestedData" object and output it
+ -compress                  Create a CMS "CompressedData" object
+ -uncompress                Uncompress a CMS "CompressedData" object
+ -EncryptedData_encrypt     Create CMS "EncryptedData" object using symmetric key
+ -EncryptedData_decrypt     Decrypt CMS "EncryptedData" object using symmetric key
+ -data_create               Create a CMS "Data" object
+ -data_out                  Copy CMS "Data" object to output
+ -cmsout                    Output CMS structure
+
+File format options:
+ -inform parm               Input format SMIME (default), PEM or DER
+ -outform parm              Output format SMIME (default), PEM or DER
+ -rctform PEM|DER           Receipt file format
+ -stream                    Enable CMS streaming
+ -indef                     Same as -stream
+ -noindef                   Disable CMS streaming
+ -binary                    Treat input as binary: do not translate to canonical form
+ -crlfeol                   Use CRLF as EOL termination instead of LF only
+ -asciicrlf                 Perform CRLF canonicalisation when signing
+
+Keys and passwords options:
+ -pwri_password val         Specific password for recipient
+ -secretkey val             Use specified hex-encoded key to decrypt/encrypt recipients or content
+ -secretkeyid val           Identity of the -secretkey for CMS "KEKRecipientInfo" object
+ -inkey val                 Input private key (if not signer or recipient)
+ -passin val                Input file pass phrase source
+ -keyopt val                Set public key parameters as n:v pairs
+ -keyform format            Input private key format (DER/PEM)
+
+Provider options:
+ -provider-path val         Provider load path (must be before 'provider' argument if required)
+ -provider val              Provider to load (can be specified multiple times)
+ -provparam val             Set a provider key-value parameter
+ -propquery val             Property query used when fetching algorithms
+
+Random state options:
+ -rand val                  Load the given file(s) into the random number generator
+ -writerand outfile         Write random data to the specified file
+
+Encryption and decryption options:
+ -originator val            Originator certificate
+ -recip infile              Recipient cert
+ -cert... parm              Recipient certs (optional; used only when encrypting)
+ -*                         The encryption algorithm to use (any supported cipher)
+ -kekcipher val             The key encryption algorithm to use
+ -wrap val                  Key wrap algorithm to use when encrypting with key agreement or key encapsulation
+ -aes128-wrap               Use AES128 to wrap key
+ -aes192-wrap               Use AES192 to wrap key
+ -aes256-wrap               Use AES256 to wrap key
+ -des3-wrap                 Use 3DES-EDE to wrap key
+ -debug_decrypt             Disable MMA protection, return error if no recipient found (see doc)
+ -recip_kdf val             Set KEMRecipientInfo KDF for current recipient
+ -recip_ukm val             KEMRecipientInfo user keying material for current recipient, in hex notation
+
+Signing options:
+ -md val                    Digest algorithm to use
+ -signer val                Signer certificate input
+ -certfile infile           Extra signer and intermediate CA certificates to include when signing
+                            or to use as preferred signer certs and for chain building when verifying
+ -cades                     Include signingCertificate attribute (CAdES-BES)
+ -nodetach                  Use opaque signing
+ -nocerts                   Don't include signer's certificate when signing
+ -noattr                    Don't include any signed attributes
+ -nosmimecap                Omit the SMIMECapabilities attribute
+ -no_signing_time           Omit the signing time attribute
+ -receipt_request_all       When signing, create a receipt request for all recipients
+ -receipt_request_first     When signing, create a receipt request for first recipient
+ -receipt_request_from val  Create signed receipt request with specified email address
+ -receipt_request_to val    Create signed receipt targeted to specified address
+
+Verification options:
+ -signer val                Signer certificate(s) output file
+ -content infile            Supply or override content for detached signature
+ -no_content_verify         Do not verify signed content signatures
+ -no_attr_verify            Do not verify signed attribute signatures
+ -nosigs                    Don't verify message signature
+ -noverify                  Don't verify signers certificate
+ -nointern                  Don't search certificates in message for signer
+ -cades                     Check signingCertificate (CAdES-BES)
+ -verify_partial            Return success if at least one signature can be verified
+ -verify_retcode            Exit non-zero on verification failure (depends on -verify_partial etc.)
+ -CAfile infile             File in PEM format with trusted CA certs
+ -CApath dir                Dir with trusted CA cert files in PEM format
+ -CAstore uri               URI of store with trusted CA certs
+ -no-CAfile                 Do not load the default certificates file
+ -no-CApath                 Do not load certificates from the default certificates directory
+ -no-CAstore                Do not load certificates from the default certificates store
+
+Output options:
+ -keyid                     Use subject key identifier
+ -econtent_type val         OID for external content
+ -text                      Include or delete text MIME headers
+ -certsout outfile          Certificate output file
+ -to val                    To address
+ -from val                  From address
+ -subject val               Subject
+
+Printing options:
+ -noout                     For the -cmsout operation do not output the parsed CMS structure
+ -print                     For the -cmsout operation print out all fields of the CMS structure
+ -nameopt val               For the -print option specifies various strings printing options
+ -receipt_request_print     Print CMS Receipt Request
+
+Validation options:
+ -policy val                adds policy to the acceptable policy set
+ -purpose val               certificate chain purpose
+ -verify_name val           verification policy name
+ -verify_depth nonneg       chain depth limit
+ -auth_level nonneg         chain authentication security level
+ -attime intmax             verification epoch time
+ -verify_hostname val       expected peer hostname
+ -verify_email val          expected peer email
+ -verify_ip val             expected peer IP address
+ -ignore_critical           permit unhandled critical extensions
+ -issuer_checks             (deprecated)
+ -crl_check                 check leaf certificate revocation
+ -crl_check_all             check full chain revocation
+ -policy_check              perform rfc5280 policy checks
+ -explicit_policy           set policy variable require-explicit-policy
+ -inhibit_any               set policy variable inhibit-any-policy
+ -inhibit_map               set policy variable inhibit-policy-mapping
+ -x509_strict               disable certificate compatibility work-arounds
+ -extended_crl              enable extended CRL features
+ -use_deltas                use delta CRLs
+ -policy_print              print policy processing diagnostics
+ -check_ss_sig              check root CA self-signatures
+ -trusted_first             search trust store first (default)
+ -suiteB_128_only           Suite B 128-bit-only mode
+ -suiteB_128                Suite B 128-bit mode allowing 192-bit algorithms
+ -suiteB_192                Suite B 192-bit-only mode
+ -partial_chain             accept chains anchored by intermediate trust-store CAs
+ -no_alt_chains             (deprecated)
+ -no_check_time             ignore certificate validity time
+ -allow_proxy_certs         allow the use of proxy certificates
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -help => 0
+    ok 36 - encrypted content test streaming PEM format -noout, 128 bit AES key
+ok 4 - CMS <=> CMS consistency tests
+# 
+# Subtest: CMS <=> CMS consistency tests, modified key parameters
+    1..19
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -keyopt 'rsa_padding_mode:pss' -keyopt 'rsa_pss_saltlen:auto-digestmax' -out digestmaxtest.cms => 0
+    ok 1
+../../util/wrap.pl ../../apps/openssl asn1parse -in digestmaxtest.cms -dump => 0
+../../util/wrap.pl ../../apps/openssl asn1parse -in digestmaxtest.cms -strparse 1345 => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -keyopt rsa_padding_mode:pss -out cms2cms-mod-1.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -keyopt 'rsa_padding_mode:pss' -out cms2cms-mod-1.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-1.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-1.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-1.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-1.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-1.txt
+    ok 2 - signed content test streaming PEM format, RSA keys, PSS signature
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -keyopt rsa_padding_mode:pss -keyopt rsa_pss_saltlen:max -out cms2cms-mod-2.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -keyopt 'rsa_padding_mode:pss' -keyopt 'rsa_pss_saltlen:max' -out cms2cms-mod-2.cms => 0
+../../util/wrap.pl ../../apps/openssl asn1parse -in cms2cms-mod-2.cms -dump => 0
+../../util/wrap.pl ../../apps/openssl asn1parse -in cms2cms-mod-2.cms -strparse 1345 => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-2.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-2.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-2.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-2.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-2.txt
+    ok 3 - signed content test streaming PEM format, RSA keys, PSS signature, saltlen=max
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -noattr -signer ../../test/smime-certs/smrsa1.pem -keyopt rsa_padding_mode:pss -out cms2cms-mod-3.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -noattr -signer ../../test/smime-certs/smrsa1.pem -keyopt 'rsa_padding_mode:pss' -out cms2cms-mod-3.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-3.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-3.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-3.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-3.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-3.txt
+    ok 4 - signed content test streaming PEM format, RSA keys, PSS signature, no attributes
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -keyopt rsa_padding_mode:pss -keyopt rsa_mgf1_md:sha384 -out cms2cms-mod-4.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -keyopt 'rsa_padding_mode:pss' -keyopt 'rsa_mgf1_md:sha384' -out cms2cms-mod-4.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-4.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-4.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-4.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-4.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-4.txt
+    ok 5 - signed content test streaming PEM format, RSA keys, PSS signature, SHA384 MGF1
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -md sha256 -keyopt rsa_padding_mode:pss -keyopt rsa_pss_saltlen:16 -out cms2cms-mod-5.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -md sha256 -keyopt 'rsa_padding_mode:pss' -keyopt 'rsa_pss_saltlen:16' -out cms2cms-mod-5.cms => 0
+../../util/wrap.pl ../../apps/openssl asn1parse -in cms2cms-mod-5.cms -dump => 0
+../../util/wrap.pl ../../apps/openssl asn1parse -in cms2cms-mod-5.cms -strparse 1345 => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-5.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-5.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-5.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-5.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-5.txt
+    ok 6 - signed content test streaming PEM format, RSA keys, PSS signature, saltlen=16
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -md sha256 -keyopt rsa_padding_mode:pss -keyopt rsa_pss_saltlen:digest -out cms2cms-mod-6.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -md sha256 -keyopt 'rsa_padding_mode:pss' -keyopt 'rsa_pss_saltlen:digest' -out cms2cms-mod-6.cms => 0
+../../util/wrap.pl ../../apps/openssl asn1parse -in cms2cms-mod-6.cms -dump => 0
+../../util/wrap.pl ../../apps/openssl asn1parse -in cms2cms-mod-6.cms -strparse 1345 => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-6.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-6.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-mod-6.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-mod-6.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-6.txt
+    ok 7 - signed content test streaming PEM format, RSA keys, PSS signature, saltlen=digest
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-7.cms -recip ../../test/smime-certs/smrsa1.pem -keyopt rsa_padding_mode:oaep
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-7.cms -recip ../../test/smime-certs/smrsa1.pem -keyopt 'rsa_padding_mode:oaep' => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-mod-7.cms -out cms2cms-mod-7.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-mod-7.cms -out cms2cms-mod-7.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-7.txt
+    ok 8 - enveloped content test streaming S/MIME format, DES, OAEP default parameters
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-8.cms -recip ../../test/smime-certs/smrsa1.pem -keyopt rsa_padding_mode:oaep -keyopt rsa_oaep_md:sha256
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-8.cms -recip ../../test/smime-certs/smrsa1.pem -keyopt 'rsa_padding_mode:oaep' -keyopt 'rsa_oaep_md:sha256' => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-mod-8.cms -out cms2cms-mod-8.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smrsa1.pem -in cms2cms-mod-8.cms -out cms2cms-mod-8.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-8.txt
+    ok 9 - enveloped content test streaming S/MIME format, DES, OAEP SHA256
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-9.cms -recip ../../test/smime-certs/smec1.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-9.cms -recip ../../test/smime-certs/smec1.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smec1.pem -in cms2cms-mod-9.cms -out cms2cms-mod-9.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smec1.pem -in cms2cms-mod-9.cms -out cms2cms-mod-9.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-9.txt
+    ok 10 - enveloped content test streaming S/MIME format, DES, ECDH
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-10.cms ../../test/smime-certs/smec1.pem ../../test/smime-certs/smec3.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-10.cms ../../test/smime-certs/smec1.pem ../../test/smime-certs/smec3.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -inkey ../../test/smime-certs/smec3.pem -in cms2cms-mod-10.cms -out cms2cms-mod-10.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -inkey ../../test/smime-certs/smec3.pem -in cms2cms-mod-10.cms -out cms2cms-mod-10.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-10.txt
+    ok 11 - enveloped content test streaming S/MIME format, DES, ECDH, 2 recipients, key only used
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -keyid -in ../../test/smcont.txt -stream -out cms2cms-mod-11.cms -recip ../../test/smime-certs/smec1.pem
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -keyid -in ../../test/smcont.txt -stream -out cms2cms-mod-11.cms -recip ../../test/smime-certs/smec1.pem => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smec1.pem -in cms2cms-mod-11.cms -out cms2cms-mod-11.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smec1.pem -in cms2cms-mod-11.cms -out cms2cms-mod-11.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-11.txt
+    ok 12 - enveloped content test streaming S/MIME format, ECDH, DES, key identifier
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-12.cms -recip ../../test/smime-certs/smec1.pem -aes128 -keyopt ecdh_kdf_md:sha256
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-12.cms -recip ../../test/smime-certs/smec1.pem -aes128 -keyopt 'ecdh_kdf_md:sha256' => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smec1.pem -in cms2cms-mod-12.cms -out cms2cms-mod-12.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smec1.pem -in cms2cms-mod-12.cms -out cms2cms-mod-12.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-12.txt
+    ok 13 - enveloped content test streaming S/MIME format, ECDH, AES-128-CBC, SHA256 KDF
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-13.cms -recip ../../test/smime-certs/smec1.pem -aes-128-gcm -keyopt ecdh_kdf_md:sha256
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-13.cms -recip ../../test/smime-certs/smec1.pem -aes-128-gcm -keyopt 'ecdh_kdf_md:sha256' => 0
+    # CMD: openssl cms -decrypt -recip ../../test/smime-certs/smec1.pem -in cms2cms-mod-13.cms -out cms2cms-mod-13.txt
+../../util/wrap.pl ../../apps/openssl cms -decrypt -recip ../../test/smime-certs/smec1.pem -in cms2cms-mod-13.cms -out cms2cms-mod-13.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-13.txt
+    ok 14 - enveloped content test streaming S/MIME format, ECDH, AES-128-GCM cipher, SHA256 KDF
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-14.cms -recip ../../test/smime-certs/smec2.pem -aes128 -keyopt ecdh_kdf_md:sha256 -keyopt ecdh_cofactor_mode:1
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-14.cms -recip ../../test/smime-certs/smec2.pem -aes128 -keyopt 'ecdh_kdf_md:sha256' -keyopt 'ecdh_cofactor_mode:1' => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smec2.pem -in cms2cms-mod-14.cms -out cms2cms-mod-14.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smec2.pem -in cms2cms-mod-14.cms -out cms2cms-mod-14.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-14.txt
+    ok 15 - enveloped content test streaming S/MIME format, ECDH, K-283, cofactor DH
+    # CMD: openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-15.cms -recip ../../test/smime-certs/smdh.pem -aes128
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -stream -out cms2cms-mod-15.cms -recip ../../test/smime-certs/smdh.pem -aes128 => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smdh.pem -in cms2cms-mod-15.cms -out cms2cms-mod-15.txt
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -recip ../../test/smime-certs/smdh.pem -in cms2cms-mod-15.cms -out cms2cms-mod-15.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-mod-15.txt
+    ok 16 - enveloped content test streaming S/MIME format, X9.42 DH
+    ok 17 # skip Zlib not supported: compression tests skipped
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -md sha256 -keyopt rsa_padding_mode:pss -keyopt rsa_pss_saltlen:auto-digestmax -out cms2cms-comp-1.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1.pem -md sha256 -keyopt 'rsa_padding_mode:pss' -keyopt 'rsa_pss_saltlen:auto-digestmax' -out cms2cms-comp-1.cms => 0
+../../util/wrap.pl ../../apps/openssl asn1parse -in cms2cms-comp-1.cms -dump => 0
+../../util/wrap.pl ../../apps/openssl asn1parse -in cms2cms-comp-1.cms -strparse 1345 => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-comp-1.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-comp-1.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-comp-1.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-comp-1.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-comp-1.txt
+    ok 18 - signed content test streaming PEM format, RSA keys, PSS signature, saltlen=auto-digestmax, digestsize < maximum salt length
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1024.pem -md sha512 -keyopt rsa_padding_mode:pss -keyopt rsa_pss_saltlen:auto-digestmax -out cms2cms-comp-2.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform PEM -nodetach -signer ../../test/smime-certs/smrsa1024.pem -md sha512 -keyopt 'rsa_padding_mode:pss' -keyopt 'rsa_pss_saltlen:auto-digestmax' -out cms2cms-comp-2.cms => 0
+../../util/wrap.pl ../../apps/openssl asn1parse -in cms2cms-comp-2.cms -dump => 0
+../../util/wrap.pl ../../apps/openssl asn1parse -in cms2cms-comp-2.cms -strparse 1244 => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-comp-2.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-comp-2.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-comp-2.cms -inform PEM -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-comp-2.txt => 0
+    # Comparing ../../test/smcont.txt with cms2cms-comp-2.txt
+    ok 19 - signed content test streaming PEM format, RSA keys, PSS signature, saltlen=auto-digestmax, digestsize > maximum salt length
+ok 5 - CMS <=> CMS consistency tests, modified key parameters
+# 
+# Subtest: CMS Check the content type attribute is added for additional signers
+    1..1
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -binary -nodetach -stream -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smrsa1.pem -md SHA256 -out cms2cms-added-1.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -binary -nodetach -stream -in ../../test/smcont.txt -outform DER -signer ../../test/smime-certs/smrsa1.pem -md SHA256 -out cms2cms-added-1.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -resign -binary -nodetach -in cms2cms-added-1.cms -inform DER -outform DER -signer ../../test/smime-certs/smrsa2.pem -md SHA256 -out cms2cms-added-12.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -resign -binary -nodetach -in cms2cms-added-1.cms -inform DER -outform DER -signer ../../test/smime-certs/smrsa2.pem -md SHA256 -out cms2cms-added-12.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-added-12.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-added-1.txt
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in cms2cms-added-12.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms2cms-added-1.txt => 0
+    ok 1 - signed content test - check that content type is added to additional signerinfo, RSA keys
+ok 6 - CMS Check the content type attribute is added for additional signers
+# 
+# Subtest: CMS Check that bad attributes fail when verifying signers
+    1..4
+CMS Verification failure
+8011751EB5700000:error:17000064:CMS routines:cms_signerinfo_verify_cert:certificate verify error:crypto/cms/cms_smime.c:329:Verify error: unable to get local issuer certificate
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in ../../test/recipes/80-test_cms_data/bad_signtime_attr.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out incorrect-0.txt => 4
+    ok 1 - bad_signtime_attr.cms
+CMS Verification failure
+8091391748710000:error:17000064:CMS routines:cms_signerinfo_verify_cert:certificate verify error:crypto/cms/cms_smime.c:329:Verify error: unable to get local issuer certificate
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in ../../test/recipes/80-test_cms_data/no_ct_attr.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out incorrect-0.txt => 4
+    ok 2 - no_ct_attr.cms
+CMS Verification failure
+80C1D6C660770000:error:17000064:CMS routines:cms_signerinfo_verify_cert:certificate verify error:crypto/cms/cms_smime.c:329:Verify error: unable to get local issuer certificate
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in ../../test/recipes/80-test_cms_data/no_md_attr.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out incorrect-0.txt => 4
+    ok 3 - no_md_attr.cms
+CMS Verification failure
+80E133DA417E0000:error:17000064:CMS routines:cms_signerinfo_verify_cert:certificate verify error:crypto/cms/cms_smime.c:329:Verify error: unable to get local issuer certificate
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in ../../test/recipes/80-test_cms_data/ct_multiple_attr.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out incorrect-0.txt => 4
+    ok 4 - ct_multiple_attr.cms
+ok 7 - CMS Check that bad attributes fail when verifying signers
+# 
+# Subtest: CMS Check that bad encryption algorithm fails
+    1..1
+Error writing CMS output
+80B10620087D0000:error:04000067:object identifier routines:OBJ_txt2obj:unknown object name:crypto/objects/obj_dat.c:350:
+80B10620087D0000:error:170000C2:CMS routines:ossl_cms_EncryptedContent_init_bio:unsupported content encryption algorithm:crypto/cms/cms_enc.c:107:
+80B10620087D0000:error:06880007:asn1 encoding routines:i2d_ASN1_bio_stream:BUF lib:crypto/asn1/asn_mime.c:79:
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -provider legacy -encrypt -in ../../test/smcont.txt -stream -recip ../../test/smime-certs/smrsa1.pem -des-ede3 -out smtst.txt => 6
+    ok 1 - Decrypt message from OpenSSL 1.1.1
+ok 8 - CMS Check that bad encryption algorithm fails
+# 
+# Subtest: CMS Decrypt message encrypted with OpenSSL 1.1.1
+    1..1
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -inkey ../../test/smime-certs/smec3.pem -in ../../test/recipes/80-test_cms_data/ciphertext_from_1_1_1.cms -out smtst.txt => 0
+    ok 1 - Decrypt message from OpenSSL 1.1.1
+ok 9 - CMS Decrypt message encrypted with OpenSSL 1.1.1
+# 
+# Subtest: CMS decrypt authEnvelopedData with authenticated attributes
+    1..4
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0 -in ../../test/recipes/80-test_cms_data/authenveloped_attrs.pem -out authattrs.txt => 0
+    ok 1 - decrypt authEnvelopedData with authAttrs
+    ok 2 - decrypted authEnvelopedData plaintext matches expected
+Error decrypting CMS structure
+80313EF8D5740000:error:1C800064:Provider routines:gcm_cipher_internal:bad decrypt:providers/implementations/ciphers/ciphercommon_gcm.c:523:
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -inform PEM -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0 -in ../../test/recipes/80-test_cms_data/bad_authenveloped_attrs.pem -out bad_authattrs.txt => 4
+    ok 3 - reject authEnvelopedData with tampered authAttrs
+    ok 4 - tampered authEnvelopedData leaks no plaintext to -out
+ok 10 - CMS decrypt authEnvelopedData with authenticated attributes
+# 
+# Subtest: CMS parse authenticatedData authAttrs and unauthAttrs
+    1..3
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -cmsout -noout -print -inform PEM -in ../../test/recipes/80-test_cms_data/authenticated_attrs.pem => 0
+    ok 1 - parse authenticatedData with attributes
+    ok 2 - authAttrs parsed as SET OF Attribute
+    ok 3 - unauthAttrs parsed as SET OF Attribute
+ok 11 - CMS parse authenticatedData authAttrs and unauthAttrs
+# 
+# Subtest: reject signature algorithm OID as digestAlgorithm
+    1..8
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -md sha256 -signer ../../test/smime-certs/smrsa1.pem -out digalg-cms-attrs.der => 0
+    ok 1 - sign (cms, attrs)
+CMS Verification failure
+8021DC95367C0000:error:0308010C:digital envelope routines:inner_evp_generic_fetch:unsupported:crypto/evp/evp_fetch.c:476:Non-default library context, Algorithm (sha256WithRSAEncryption : 0), Properties (<null>)
+8021DC95367C0000:error:17000095:CMS routines:CMS_SignerInfo_verify:unknown digest algorithm:crypto/cms/cms_sd.c:1349:
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -noverify -in digalg-cms-attrs.der -inform DER -out digalg-cms-attrs.der.txt => 4
+    ok 2 - must not verify with signature algorithm OID (cms, attrs)
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -md sha256 -noattr -signer ../../test/smime-certs/smrsa1.pem -out digalg-cms-noattr.der => 0
+    ok 3 - sign (cms, noattr)
+CMS Verification failure
+80F1E4898F740000:error:0308010C:digital envelope routines:inner_evp_generic_fetch:unsupported:crypto/evp/evp_fetch.c:476:Non-default library context, Algorithm (sha256WithRSAEncryption : 0), Properties (<null>)
+80F1E4898F740000:error:17000095:CMS routines:ossl_cms_DigestAlgorithm_init_bio:unknown digest algorithm:crypto/cms/cms_lib.c:405:
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -noverify -in digalg-cms-noattr.der -inform DER -out digalg-cms-noattr.der.txt => 4
+    ok 4 - must not verify with signature algorithm OID (cms, noattr)
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -md sha256 -signer ../../test/smime-certs/smrsa1.pem -out digalg-smime-attrs.der => 0
+    ok 5 - sign (smime, attrs)
+Verification failure
+80518FDCF4790000:error:0308010C:digital envelope routines:inner_evp_generic_fetch:unsupported:crypto/evp/evp_fetch.c:476:Non-default library context, Algorithm (sha256WithRSAEncryption : 0), Properties (<null>)
+80518FDCF4790000:error:1080006D:PKCS7 routines:pkcs7_bio_add_digest:unknown digest type:crypto/pkcs7/pk7_doit.c:116:
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -noverify -in digalg-smime-attrs.der -inform DER -out digalg-smime-attrs.der.txt => 4
+    ok 6 - must not verify with signature algorithm OID (smime, attrs)
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -md sha256 -noattr -signer ../../test/smime-certs/smrsa1.pem -out digalg-smime-noattr.der => 0
+    ok 7 - sign (smime, noattr)
+Verification failure
+807111B4CF710000:error:0308010C:digital envelope routines:inner_evp_generic_fetch:unsupported:crypto/evp/evp_fetch.c:476:Non-default library context, Algorithm (sha256WithRSAEncryption : 0), Properties (<null>)
+807111B4CF710000:error:1080006D:PKCS7 routines:pkcs7_bio_add_digest:unknown digest type:crypto/pkcs7/pk7_doit.c:116:
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -noverify -in digalg-smime-noattr.der -inform DER -out digalg-smime-noattr.der.txt => 4
+    ok 8 - must not verify with signature algorithm OID (smime, noattr)
+ok 12 - reject signature algorithm OID as digestAlgorithm
+# 
+# Subtest: CAdES <=> CAdES consistency tests
+    1..5
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -cades -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms-cades-1.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -cades -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms-cades-1.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -cades -in cms-cades-1.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms-cades-1.txt
+CAdES Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -cades -in cms-cades-1.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms-cades-1.txt => 0
+    # Comparing ../../test/smcont.txt with cms-cades-1.txt
+    ok 1 - signed content DER format, RSA key, CAdES-BES compatible
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -cades -md sha256 -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms-cades-2.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -cades -md sha256 -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms-cades-2.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -cades -in cms-cades-2.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms-cades-2.txt
+CAdES Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -cades -in cms-cades-2.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms-cades-2.txt => 0
+    # Comparing ../../test/smcont.txt with cms-cades-2.txt
+    ok 2 - signed content DER format, RSA key, SHA256 md, CAdES-BES compatible
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -cades -md sha512 -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms-cades-3.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -cades -md sha512 -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cms-cades-3.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -cades -in cms-cades-3.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms-cades-3.txt
+CAdES Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -cades -in cms-cades-3.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms-cades-3.txt => 0
+    # Comparing ../../test/smcont.txt with cms-cades-3.txt
+    ok 3 - signed content DER format, RSA key, SHA512 md, CAdES-BES compatible
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -cades -binary -nodetach -nosmimecap -md sha256 -in ../../test/smcont.txt -outform DER -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -outform DER -out cms-cades-4.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -cades -binary -nodetach -nosmimecap -md sha256 -in ../../test/smcont.txt -outform DER -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -outform DER -out cms-cades-4.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -cades -in cms-cades-4.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms-cades-4.txt
+CAdES Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -cades -in cms-cades-4.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms-cades-4.txt => 0
+    # Comparing ../../test/smcont.txt with cms-cades-4.txt
+    ok 4 - signed content DER format, RSA key, SHA256 md, CAdES-BES compatible
+    # CMD: openssl cms -provider-path ../../providers -provider default -sign -cades -binary -nodetach -nosmimecap -md sha256 -in ../../test/smcont.txt -outform DER -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -outform DER -out cms-cades-5.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -cades -binary -nodetach -nosmimecap -md sha256 -in ../../test/smcont.txt -outform DER -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -outform DER -out cms-cades-5.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -resign -cades -binary -nodetach -nosmimecap -md sha256 -inform DER -in cms-cades-5.cms -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa2.pem -outform DER -out cms-cades-52.cms
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -resign -cades -binary -nodetach -nosmimecap -md sha256 -inform DER -in cms-cades-5.cms -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa2.pem -outform DER -out cms-cades-52.cms => 0
+    # CMD: openssl cms -provider-path ../../providers -provider default -verify -cades -in cms-cades-52.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms-cades-5.txt
+CAdES Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -cades -in cms-cades-52.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cms-cades-5.txt => 0
+    # Comparing ../../test/smcont.txt with cms-cades-5.txt
+    ok 5 - resigned content DER format, RSA key, SHA256 md, CAdES-BES compatible
+ok 13 - CAdES <=> CAdES consistency tests
+# 
+# Subtest: CAdES; cms incompatible arguments tests
+    1..3
+Incompatible options: CAdES requires signed attributes
+cms: Use -help for summary.
+../../util/wrap.pl ../../apps/openssl cms -cades -noattr => 1
+    ok 1
+Incompatible options: CAdES requires signed attributes
+cms: Use -help for summary.
+../../util/wrap.pl ../../apps/openssl cms -verify -cades -noattr => 1
+    ok 2
+Incompatible options: CAdES validation requires certs and signed attributes validations
+cms: Use -help for summary.
+../../util/wrap.pl ../../apps/openssl cms -verify -cades -noverify => 1
+    ok 3
+ok 14 - CAdES; cms incompatible arguments tests
+# 
+# Subtest: CAdES ko tests
+    1..2
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -nodetach -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out cades-ko.cms => 0
+    ok 1 - sign content DER format, RSA key, not CAdES-BES compatible
+CAdES Verification failure
+80A1D422ED7B0000:error:1B00006C:ESS routines:OSSL_ESS_check_signing_certs_ex:missing signing certificate attribute:crypto/ess/ess_lib.c:340:
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -cades -in cades-ko.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out cades-ko.txt => 4
+    ok 2 - fail to verify token since requiring CAdES-BES compatibility
+ok 15 - CAdES ko tests
+# 
+# Subtest: CMS binary input tests
+    1..11
+../../util/wrap.pl ../../apps/openssl cms -sign -md sha256 -signer ../../test/smime-certs/smrsa1.pem -binary -in ../../test/smcont.bin -out smcont.signed => 0
+    ok 1 - sign binary input with -binary
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -verify -CAfile ../../test/smime-certs/smroot.pem -binary -in smcont.signed -out smcont.verified => 0
+    ok 2 - verify binary input with -binary
+    ok 3 - binary input retained with -binary
+../../util/wrap.pl ../../apps/openssl cms -sign -md sha256 -signer ../../test/smime-certs/smrsa1.pem -in ../../test/smcont.bin -out smcont.signed.nobin => 0
+    ok 4 - sign binary input without -binary
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -verify -CAfile ../../test/smime-certs/smroot.pem -in smcont.signed.nobin -out smcont.verified.nobin => 0
+    ok 5 - verify binary input without -binary
+    ok 6 - binary input not retained without -binary
+CMS Verification failure
+80110AED32770000:error:1700009E:CMS routines:CMS_SignerInfo_verify_ex:verification failure:crypto/cms/cms_sd.c:1473:
+80110AED32770000:error:1700006D:CMS routines:CMS_verify:content verify error:crypto/cms/cms_smime.c:546:
+../../util/wrap.pl ../../apps/openssl cms -verify -CAfile ../../test/smime-certs/smroot.pem -crlfeol -binary -in smcont.signed -out smcont.verified.crlfeol => 4
+    ok 7 - verify binary input wrong crlfeol
+../../util/wrap.pl ../../apps/openssl cms -sign -md sha256 -signer ../../test/smime-certs/smrsa1.pem -crlfeol -binary -in ../../test/smcont.bin -out smcont.signed.crlf => 0
+    ok 8 - sign binary input with -binary -crlfeol
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -verify -CAfile ../../test/smime-certs/smroot.pem -crlfeol -binary -in smcont.signed.crlf -out smcont.verified.crlf => 0
+    ok 9 - verify binary input with -binary -crlfeol
+    ok 10 - binary input retained with -binary -crlfeol
+CMS Verification failure
+80E167EA0B780000:error:1700009E:CMS routines:CMS_SignerInfo_verify_ex:verification failure:crypto/cms/cms_sd.c:1473:
+80E167EA0B780000:error:1700006D:CMS routines:CMS_verify:content verify error:crypto/cms/cms_smime.c:546:
+../../util/wrap.pl ../../apps/openssl cms -verify -CAfile ../../test/smime-certs/smroot.pem -binary -in smcont.signed.crlf -out smcont.verified.crlf2 => 4
+    ok 11 - verify binary input with -binary missing -crlfeol
+ok 16 - CMS binary input tests
+# 
+# Subtest: CMS signed digest, DER format
+    1..2
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -digest ff236ef61b396355f75a4cc6e1c306d4c309084ae271a9e2ad6888f10a101b32 -outform DER -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out signature.der => 0
+    ok 1 - CMS sign pre-computed digest, DER format
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in signature.der -inform DER -CAfile ../../test/smime-certs/smroot.pem -content ../../test/smcont.txt => 0
+    ok 2 - Verify CMS signed digest, DER format
+ok 17 - CMS signed digest, DER format
+# Subtest: CMS signed digest, DER format, no signing time
+    1..4
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -digest ff236ef61b396355f75a4cc6e1c306d4c309084ae271a9e2ad6888f10a101b32 -outform DER -no_signing_time -nosmimecap -cades -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out signature.der => 0
+    ok 1 - CMS sign pre-computed digest, DER format, no signing time
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -cmsout -noout -print -in signature.der -inform DER => 0
+    ok 2 - Parse CMS signed digest, DER format, no signing time
+    ok 3 - Check that CMS signed digest does not contain signing time
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in signature.der -inform DER -CAfile ../../test/smime-certs/smroot.pem -content ../../test/smcont.txt => 0
+    ok 4 - Verify CMS signed digest, DER format, no signing time
+ok 18 - CMS signed digest, DER format, no signing time
+# Subtest: CMS signed digest, S/MIME format
+    1..2
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -digest ff236ef61b396355f75a4cc6e1c306d4c309084ae271a9e2ad6888f10a101b32 -outform SMIME -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out signature.smime => 0
+    ok 1 - CMS sign pre-computed digest, S/MIME format
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in signature.smime -inform SMIME -CAfile ../../test/smime-certs/smroot.pem -content ../../test/smcont.txt => 0
+    ok 2 - Verify CMS signed digest, S/MIME format
+ok 19 - CMS signed digest, S/MIME format
+# Subtest: CMS sign+verify cert path tests
+    1..5
+Odd number of elements in hash assignment at util/perl/OpenSSL/Test.pm line 329.
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -inkey ../../test/certs/ee-key.pem -signer ../../test/certs/ee-cert.pem -certfile ../../test/certs/ca-cert.pem -out signature.p7s => 0
+    ok 1
+Odd number of elements in hash assignment at util/perl/OpenSSL/Test.pm line 329.
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in signature.p7s -purpose sslserver -CAfile ../../test/certs/root-cert.pem -content ../../test/smcont.txt => 0
+    ok 2
+Odd number of elements in hash assignment at util/perl/OpenSSL/Test.pm line 329.
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -inkey ../../test/certs/ee-key.pem -signer ../../test/certs/ee-cert.pem -out signature.p7s => 0
+    ok 3
+Odd number of elements in hash assignment at util/perl/OpenSSL/Test.pm line 329.
+CMS Verification failure
+8021B612767A0000:error:17000064:CMS routines:cms_signerinfo_verify_cert:certificate verify error:crypto/cms/cms_smime.c:329:Verify error: unable to get local issuer certificate
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in signature.p7s -purpose sslserver -CAfile ../../test/certs/root-cert.pem -content ../../test/smcont.txt => 4
+    ok 4
+Odd number of elements in hash assignment at util/perl/OpenSSL/Test.pm line 329.
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in signature.p7s -purpose sslserver -CAfile ../../test/certs/root-cert.pem -certfile ../../test/certs/ca-cert.pem -content ../../test/smcont.txt => 0
+    ok 5
+ok 20 - CMS sign+verify cert path tests
+# Subtest: PKCS7 sign+verify cert path tests
+    1..5
+Odd number of elements in hash assignment at util/perl/OpenSSL/Test.pm line 329.
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -inkey ../../test/certs/ee-key.pem -signer ../../test/certs/ee-cert.pem -certfile ../../test/certs/ca-cert.pem -out signature.p7s => 0
+    ok 1
+Odd number of elements in hash assignment at util/perl/OpenSSL/Test.pm line 329.
+Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in signature.p7s -purpose sslserver -CAfile ../../test/certs/root-cert.pem -content ../../test/smcont.txt => 0
+    ok 2
+Odd number of elements in hash assignment at util/perl/OpenSSL/Test.pm line 329.
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -inkey ../../test/certs/ee-key.pem -signer ../../test/certs/ee-cert.pem -out signature.p7s => 0
+    ok 3
+Odd number of elements in hash assignment at util/perl/OpenSSL/Test.pm line 329.
+Verification failure
+80F159DA90720000:error:10800075:PKCS7 routines:PKCS7_verify:certificate verify error:crypto/pkcs7/pk7_smime.c:320:Verify error: unable to get local issuer certificate
+../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in signature.p7s -purpose sslserver -CAfile ../../test/certs/root-cert.pem -content ../../test/smcont.txt => 4
+    ok 4
+Odd number of elements in hash assignment at util/perl/OpenSSL/Test.pm line 329.
+Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl smime -provider-path ../../providers -provider default -verify -in signature.p7s -purpose sslserver -CAfile ../../test/certs/root-cert.pem -certfile ../../test/certs/ca-cert.pem -content ../../test/smcont.txt => 0
+    ok 5
+ok 21 - PKCS7 sign+verify cert path tests
+# Subtest: CMS code signing test
+    1..7
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/smrsa1.pem -out signature.p7s => 0
+    ok 1 - accept perform CMS signature with smime certificate
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in signature.p7s -CAfile ../../test/smime-certs/smroot.pem -content ../../test/smcont.txt => 0
+    ok 2 - accept verify CMS signature with smime certificate
+CMS Verification failure
+8031016A55780000:error:17000064:CMS routines:cms_signerinfo_verify_cert:certificate verify error:crypto/cms/cms_smime.c:329:Verify error: unsuitable certificate purpose
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in signature.p7s -CAfile ../../test/smime-certs/smroot.pem -purpose codesign -content ../../test/smcont.txt => 4
+    ok 3 - fail verify CMS signature with smime certificate for purpose code signing
+cms: Invalid purpose football
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in signature.p7s -CAfile ../../test/smime-certs/smroot.pem -purpose football -content ../../test/smcont.txt => 1
+    ok 4 - fail verify CMS signature with invalid purpose argument
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/csrsa1.pem -out signature.p7s => 0
+    ok 5 - accept perform CMS signature with code signing certificate
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in signature.p7s -CAfile ../../test/smime-certs/smroot.pem -purpose codesign -content ../../test/smcont.txt => 0
+    ok 6 - accept verify CMS signature with code signing certificate for purpose code signing
+CMS Verification failure
+80B10CB8C8730000:error:17000064:CMS routines:cms_signerinfo_verify_cert:certificate verify error:crypto/cms/cms_smime.c:329:Verify error: unsuitable certificate purpose
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in signature.p7s -CAfile ../../test/smime-certs/smroot.pem -content ../../test/smcont.txt => 4
+    ok 7 - fail verify CMS signature with code signing certificate for purpose smime_sign
+ok 22 - CMS code signing test
+Verification failure
+80512AAA04710000:error:1080006C:PKCS7 routines:PKCS7_signatureVerify:unable to find message digest:crypto/pkcs7/pk7_doit.c:1076:
+80512AAA04710000:error:10800069:PKCS7 routines:PKCS7_verify:signature failure:crypto/pkcs7/pk7_smime.c:366:
+# This is the content to be signed.
+../../util/wrap.pl ../../apps/openssl smime -verify -noverify -in ../../test/smime-eml/pkcs7-empty-digest-set.eml => 4
+ok 23 - Check empty digestAlgorithms SET is handled safely
+Verification failure
+8091DD2FC07F0000:error:0308010C:digital envelope routines:inner_evp_generic_fetch:unsupported:crypto/evp/evp_fetch.c:476:Non-default library context, Algorithm (md4 : 100), Properties (<null>)
+8091DD2FC07F0000:error:1080006D:PKCS7 routines:pkcs7_bio_add_digest:unknown digest type:crypto/pkcs7/pk7_doit.c:116:
+../../util/wrap.pl ../../apps/openssl smime -verify -noverify -inform PEM -in ../../test/recipes/80-test_cms_data/pkcs7-md4.pem => 4
+ok 24 - Check failure of EVP_DigestInit in PKCS7 signed is handled
+Error decrypting PKCS#7 structure
+80A1A487577F0000:error:0308010C:digital envelope routines:inner_evp_generic_fetch:unsupported:crypto/evp/evp_fetch.c:476:Non-default library context, Algorithm (md4 : 100), Properties (<null>)
+80A1A487577F0000:error:1080006D:PKCS7 routines:PKCS7_dataDecode:unknown digest type:crypto/pkcs7/pk7_doit.c:535:
+80A1A487577F0000:error:10800077:PKCS7 routines:PKCS7_decrypt:decrypt error:crypto/pkcs7/pk7_smime.c:519:
+../../util/wrap.pl ../../apps/openssl smime -decrypt -inform PEM -in ../../test/recipes/80-test_cms_data/pkcs7-md4-encrypted.pem -recip ../../test/certs/ee-cert.pem -inkey ../../test/certs/ee-key.pem => 4
+ok 25 - Check failure of EVP_DigestInit in PKCS7 signedAndEnveloped is handled
+CMS Verification failure
+8021AF43DC7E0000:error:17000064:CMS routines:cms_signerinfo_verify_cert:certificate verify error:crypto/cms/cms_smime.c:329:Verify error: invalid or inconsistent certificate policy extension
+../../util/wrap.pl ../../apps/openssl cms -verify -CAfile ../../test/certs/pkitsta.pem -policy anyPolicy -in ../../test/smime-eml/SignedInvalidMappingFromanyPolicyTest7.eml => 4
+ok 26 - issue\#19643
+Error decrypting CMS using secret key
+80D16AFB0D730000:error:17000084:CMS routines:CMS_decrypt_set1_key:no matching recipient:crypto/cms/cms_smime.c:950:
+../../util/wrap.pl ../../apps/openssl cms -decrypt -inform PEM -stream -secretkey 000102030405060708090A0B0C0D0E0F -secretkeyid C0FEE0 -in ../../test/cms-msg/enveloped-content-type-for-aes-gcm.pem => 4
+ok 27 - Error AES-GCM in enveloped content type
+Cannot use originator for encryption
+80613AA75A7A0000:error:170000C4:CMS routines:ossl_cms_RecipientInfo_kari_encrypt:error unsupported static key agreement:crypto/cms/cms_kari.c:454:
+80613AA75A7A0000:error:17000074:CMS routines:cms_EnvelopedData_Encryption_init_bio:error setting recipientinfo:crypto/cms/cms_env.c:1271:
+80613AA75A7A0000:error:17000068:CMS routines:CMS_final:cms lib:crypto/cms/cms_smime.c:1025:
+../../util/wrap.pl ../../apps/openssl cms -encrypt -in ../../test/smcont.txt -aes128 -recip ../../test/smime-certs/smec1.pem -originator ../../test/smime-certs/smec3.pem -inkey ../../test/smime-certs/smec3.pem => 3
+ok 28 - Check failure for currently not supported kari encryption with static originator
+Error writing CMS output
+# MIME-Version: 1.0
+80E1E09D047A0000:error:0180006C:bignum routines:BN_mod_inverse:no inverse:crypto/bn/bn_gcd.c:532:
+# Content-Disposition: attachment; filename="smime.p7m"
+80E1E09D047A0000:error:17000074:CMS routines:cms_EnvelopedData_Encryption_init_bio:error setting recipientinfo:crypto/cms/cms_env.c:1271:
+# Content-Type: application/pkcs7-mime; smime-type=enveloped-data; name="smime.p7m"
+80E1E09D047A0000:error:06880007:asn1 encoding routines:i2d_ASN1_bio_stream:BUF lib:crypto/asn1/asn_mime.c:79:
+# Content-Transfer-Encoding: base64
+# 
+../../util/wrap.pl ../../apps/openssl cms -encrypt -in ../../test/smcont.txt -aes128 -stream -recip ../../test/smime-certs/badrsa.pem => 6
+ok 29 - Check failure during BIO setup with -stream is handled correctly
+Error adding SignerInfo with key from ../../test/smime-certs/smdsa1.pem
+80F16859D7760000:error:170000C3:CMS routines:CMS_add1_signer:unsupported signature algorithm:crypto/cms/cms_sd.c:661:pkey nid=116
+../../util/wrap.pl ../../apps/openssl cms -sign -in ../../test/smcont.txt -signer ../../test/smime-certs/smdsa1.pem -md SHAKE256 => 3
+ok 30 - issue\#21986
+8021D74A7B790000:error:170000C2:CMS routines:ossl_cms_EncryptedContent_init_bio:unsupported content encryption algorithm:crypto/cms/cms_enc.c:107:
+8021D74A7B790000:error:17000068:CMS routines:CMS_final:cms lib:crypto/cms/cms_smime.c:1025:
+../../util/wrap.pl ../../apps/openssl cms -encrypt -in ../../test/smcont.txt -aes-256-ctr -recip ../../test/smime-certs/smec1.pem => 3
+ok 31 - Check for failure when cipher does not have an assigned OID (issue\#22225)
+Error decrypting CMS using private key
+80D1C906997D0000:error:170000BD:CMS routines:dh_cms_decrypt:shared info error:crypto/cms/cms_dh.c:199:
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -in ../../test/recipes/80-test_cms_data/dh-malformed.der -inform DER -recip ../../test/recipes/80-test_cms_data/dh-cert.pem -inkey ../../test/recipes/80-test_cms_data/dh-key.pem => 4
+ok 32 - Must not crash on malformed cms inputs with dh key
+Error decrypting CMS using private key
+80112F44DB7F0000:error:170000BD:CMS routines:ecdh_cms_decrypt:shared info error:crypto/cms/cms_ec.c:255:
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -in ../../test/recipes/80-test_cms_data/ecdh-malformed.der -inform DER -recip ../../test/recipes/80-test_cms_data/ecdh-cert.pem -inkey ../../test/recipes/80-test_cms_data/ecdh-key.pem => 4
+ok 33 - Must not crash on malformed cms inputs with ecdh key
+Error decrypting CMS structure
+808143602D7D0000:error:170000BE:CMS routines:rsa_cms_decrypt:invalid label:crypto/cms/cms_rsa.c:88:
+808143602D7D0000:error:03000082:digital envelope routines:EVP_CIPHER_CTX_set_key_length:invalid key length:crypto/evp/evp_enc.c:893:
+808143602D7D0000:error:17000076:CMS routines:ossl_cms_EncryptedContent_init_bio:invalid key length:crypto/cms/cms_enc.c:168:
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -in ../../test/recipes/80-test_cms_data/rsa-malformed.der -inform DER -recip ../../test/smime-certs/smrsa3.pem -inkey ../../test/smime-certs/smrsa3-key.pem -out '{output}.cms' => 4
+ok 34 - Must not crash on malformed cms inputs with RSA key
+# Subtest: encrypt to three recipients with RSA-OAEP, key only decrypt
+    1..3
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -aes128 -in ../../test/smcont.txt -out smtst.cms -stream -recip ../../test/smime-certs/smrsa1.pem -keyopt 'rsa_padding_mode:oaep' -recip ../../test/smime-certs/smrsa2.pem -keyopt 'rsa_padding_mode:oaep' -recip ../../test/smime-certs/smrsa3-cert.pem -keyopt 'rsa_padding_mode:oaep' => 0
+    ok 1 - encrypt to three recipients with RSA-OAEP (avoid openssl/project issue\#380)
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -aes128 -in smtst.cms -out smtst.txt -inkey ../../test/smime-certs/smrsa3-key.pem => 0
+    ok 2 - decrypt with key only
+    ok 3 - compare original message with decrypted ciphertext
+ok 35 - encrypt to three recipients with RSA-OAEP, key only decrypt
+# Subtest: EdDSA tests for CMS
+    1..2
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -md sha512 -in ../../test/smcont.txt -signer ../../test/certs/root-ed25519.pem -inkey ../../test/certs/root-ed25519.privkey.pem -out sig1.cms => 0
+    ok 1 - accept CMS signature with Ed25519
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig1.cms -CAfile ../../test/certs/root-ed25519.pem -content ../../test/smcont.txt => 0
+    ok 2 - accept CMS verify with Ed25519
+ok 36 - EdDSA tests for CMS
+# Subtest: EdDSA -noattr tests for CMS
+    1..4
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -certfile ../../test/smime-certs/smroot.pem -noattr -signer ../../test/certs/root-ed25519.pem -inkey ../../test/certs/root-ed25519.privkey.pem -out sig1.cms => 0
+    ok 1 - accept CMS signature with Ed25519 and -noattr
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig1.cms -inform DER -certfile ../../test/certs/root-ed25519.pem -noverify -content ../../test/smcont.txt => 0
+    ok 2 - accept CMS verify with Ed25519 and -noattr
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -certfile ../../test/smime-certs/smroot.pem -noattr -signer ../../test/certs/root-ed448-cert.pem -inkey ../../test/certs/root-ed448-key.pem -out sig2.cms => 0
+    ok 3 - accept CMS signature with Ed448 and -noattr
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig2.cms -inform DER -certfile ../../test/certs/root-ed448-cert.pem -noverify -content ../../test/smcont.txt => 0
+    ok 4 - accept CMS verify with Ed448 and -noattr
+ok 37 - EdDSA -noattr tests for CMS
+# Subtest: ML-DSA tests for CMS
+    1..4
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -md sha512 -in ../../test/smcont.txt -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/sm_mldsa44.pem -out sig1.cms => 0
+    ok 1 - accept CMS signature with ML-DSA-44
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig1.cms -CAfile ../../test/smime-certs/smroot.pem -content ../../test/smcont.txt => 0
+    ok 2 - accept CMS verify with ML-DSA-44
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -certfile ../../test/smime-certs/smroot.pem -noattr -signer ../../test/smime-certs/sm_mldsa44.pem -out sig1.cms => 0
+    ok 3 - accept CMS signature with ML-DSA-44 and -noattr
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig1.cms -inform DER -certfile ../../test/smime-certs/sm_mldsa44.pem -noverify -content ../../test/smcont.txt => 0
+    ok 4 - accept CMS verify with ML-DSA-44 and -noattr
+ok 38 - ML-DSA tests for CMS
+# Subtest: SLH-DSA tests for CMS
+    1..8
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -md sha512 -in ../../test/smcont.txt -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/sm_slhdsa_sha2_128s.pem -out sig1.cms => 0
+    ok 1 - accept CMS signature with SLH-DSA-SHA2-128s
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig1.cms -CAfile ../../test/smime-certs/smroot.pem -content ../../test/smcont.txt => 0
+    ok 2 - accept CMS verify with SLH-DSA-SHA2-128s
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -md shake128 -in ../../test/smcont.txt -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/sm_slhdsa_shake_128s.pem -out sig1.cms => 0
+    ok 3 - accept CMS signature with SLH-DSA-SHAKE-128s
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig1.cms -CAfile ../../test/smime-certs/smroot.pem -content ../../test/smcont.txt => 0
+    ok 4 - accept CMS verify with SLH-DSA-SHAKE-128s
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -md shake256 -in ../../test/smcont.txt -certfile ../../test/smime-certs/smroot.pem -signer ../../test/smime-certs/sm_slhdsa_shake_256s.pem -out sig1.cms => 0
+    ok 5 - accept CMS signature with SLH-DSA-SHAKE-256s
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig1.cms -CAfile ../../test/smime-certs/smroot.pem -content ../../test/smcont.txt => 0
+    ok 6 - accept CMS verify with SLH-DSA-SHAKE-256s
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -outform DER -certfile ../../test/smime-certs/smroot.pem -noattr -signer ../../test/smime-certs/sm_slhdsa_shake_256s.pem -out sig1.cms => 0
+    ok 7 - accept CMS signature with SLH-DSA-SHAKE-256s and -noattr
+CMS Verification successful
+# Somewhat longer test content for OpenSSL CMS utility to handle, and a bit longer...../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig1.cms -inform DER -certfile ../../test/smime-certs/sm_slhdsa_shake_256s.pem -noverify -content ../../test/smcont.txt => 0
+    ok 8 - accept CMS verify with SLH-DSA-SHAKE-256s and -noattr
+ok 39 - SLH-DSA tests for CMS
+# Subtest: sign and verify with multiple keys
+    1..7
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -out sig1.cms -outform DER => 0
+    ok 1 - sign with first key
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig1.cms -inform DER -CAfile ../../test/smime-certs/smrsa1.pem -partial_chain -out out1.txt => 0
+    ok 2 - verify single signature
+    ok 3 - compare original message with verified message
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -resign -in sig1.cms -inform DER -signer ../../test/smime-certs/smrsa2.pem -out sig2.cms -outform DER => 0
+    ok 4 - resign with second key
+CMS Verification failure
+80919AEA56720000:error:17000064:CMS routines:cms_signerinfo_verify_cert:certificate verify error:crypto/cms/cms_smime.c:329:Verify error: unable to get local issuer certificate
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig2.cms -inform DER -CAfile ../../test/smime-certs/smrsa1.pem -partial_chain -out out2.txt => 4
+    ok 5 - try to verify two signatures with only rsa1
+CMS Verification successful
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig2.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -out out2.txt => 0
+    ok 6 - verify both signature signatures with root
+    ok 7 - compare original message with verified message
+ok 40 - sign and verify with multiple keys
+# Subtest: ML-KEM KEMRecipientInfo tests for CMS
+    1..5
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -out mlkem512.cms -recip ../../test/smime-certs/sm_mlkem512.pem -aes-256-gcm -keyid => 0
+    ok 1 - CMS encrypt with ML-KEM-512 and default KDF
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -in mlkem512.cms -out mlkem512.txt -recip ../../test/smime-certs/sm_mlkem512.pem => 0
+    ok 2 - CMS decrypt with ML-KEM-512 and default KDF
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -encrypt -in ../../test/smcont.txt -out mlkem512_mlkem768.cms -recip ../../test/smime-certs/sm_mlkem512.pem -recip_kdf HKDF-SHA512 -recip ../../test/smime-certs/sm_mlkem768.pem -recip_ukm 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f -aes-256-gcm -keyid => 0
+    ok 3 - CMS encrypt to multiple with ML-KEM and explicit KDF and UKM
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -in mlkem512_mlkem768.cms -out mlkem512-2.txt -recip ../../test/smime-certs/sm_mlkem512.pem => 0
+    ok 4 - CMS decrypt with ML-KEM-512 and explicit KDF
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -in mlkem512_mlkem768.cms -out mlkem768-2.txt -recip ../../test/smime-certs/sm_mlkem768.pem => 0
+    ok 5 - CMS decrypt with ML-KEM-768 and using UKM
+ok 41 - ML-KEM KEMRecipientInfo tests for CMS
+# Subtest: PWRI missing keyDerivationAlgorithm regression
+    1..1
+Error decrypting CMS using password
+80B1CB97317C0000:error:170000B0:CMS routines:ossl_cms_RecipientInfo_pwri_crypt:invalid key encryption parameter:crypto/cms/cms_pwri.c:373:Missing KeyDerivationAlgorithm
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -decrypt -inform DER -in ../../test/cms-msg/missing-kdf.der -out pwri-out.txt -pwri_password secret => 4
+    ok 1 - missing keyDerivationAlgorithm is rejected
+ok 42 - PWRI missing keyDerivationAlgorithm regression
+# Subtest: sign and verify with multiple keys and -verify_partial
+    1..10
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -sign -in ../../test/smcont.txt -nodetach -signer ../../test/smime-certs/smrsa1.pem -out sig1.cms -outform DER => 0
+    ok 1 - sign with first key
+CMS Verification successful
+Signer 0: C = UK, O = OpenSSL Group, CN = Test S/MIME EE RSA #1
+  Verification successful (cert: success, attrs: success, content: success)
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig1.cms -inform DER -CAfile ../../test/smime-certs/smrsa1.pem -partial_chain -verify_partial -out out1.txt => 0
+    ok 2 - verify single signature
+    ok 3 - compare original message with verified message
+CMS Verification failure
+80B174C33A720000:error:17000064:CMS routines:cms_signerinfo_verify_cert:certificate verify error:crypto/cms/cms_smime.c:329:Verify error: unable to get local issuer certificate
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig1.cms -inform DER -CAfile ../../test/smime-certs/smrsa2.pem -partial_chain -verify_partial -out out2.txt => 4
+    ok 4 - try to verify rsa1 signature with only rsa2
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -resign -in sig1.cms -inform DER -signer ../../test/smime-certs/smrsa2.pem -out sig2.cms -outform DER => 0
+    ok 5 - resign with second key
+CMS Verification successful
+Signer 0: C = UK, O = OpenSSL Group, CN = Test S/MIME EE RSA #1
+  Verification successful (cert: success, attrs: success, content: success)
+Signer 1: C = UK, O = OpenSSL Group, CN = Test S/MIME EE RSA #2
+  Verification failed (cert: failure or not verified, attrs: failure or not verified, content: failure or not verified)
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig2.cms -inform DER -CAfile ../../test/smime-certs/smrsa1.pem -partial_chain -verify_partial -signer signers.pem -out out2.txt => 0
+    ok 6 - verify two signatures with only rsa1
+    ok 7 - only the verified signer is output
+CMS Verification successful
+Signer 0: C = UK, O = OpenSSL Group, CN = Test S/MIME EE RSA #1
+  Verification failed (cert: failure or not verified, attrs: failure or not verified, content: failure or not verified)
+Signer 1: C = UK, O = OpenSSL Group, CN = Test S/MIME EE RSA #2
+  Verification successful (cert: success, attrs: success, content: success)
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig2.cms -inform DER -CAfile ../../test/smime-certs/smrsa2.pem -partial_chain -verify_partial -out out2.txt => 0
+    ok 8 - verify two signatures with only rsa2
+CMS Verification successful
+Signer 0: C = UK, O = OpenSSL Group, CN = Test S/MIME EE RSA #1
+  Verification successful (cert: success, attrs: success, content: success)
+Signer 1: C = UK, O = OpenSSL Group, CN = Test S/MIME EE RSA #2
+  Verification successful (cert: success, attrs: success, content: success)
+../../util/wrap.pl ../../apps/openssl cms -provider-path ../../providers -provider default -verify -in sig2.cms -inform DER -CAfile ../../test/smime-certs/smroot.pem -verify_partial -out out2.txt => 0
+    ok 9 - verify both signature signatures with root
+    ok 10 - compare original message with verified message
+ok 43 - sign and verify with multiple keys and -verify_partial

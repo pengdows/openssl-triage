@@ -1,0 +1,17 @@
+AES-128-CFB    nid=421  type=421  encrypt=ok decrypt=1 out=30 equal=yes
+AES-128-CFB1   nid=650  type=421  encrypt=ok decrypt=1 out=30 equal=no
+AES-128-CFB8   nid=653  type=421  encrypt=ok decrypt=1 out=30 equal=no
+AES-192-CFB    nid=425  type=425  encrypt=ok decrypt=1 out=30 equal=yes
+AES-192-CFB1   nid=651  type=425  encrypt=ok decrypt=1 out=30 equal=no
+AES-192-CFB8   nid=654  type=425  encrypt=ok decrypt=1 out=30 equal=no
+AES-256-CFB    nid=429  type=429  encrypt=ok decrypt=1 out=30 equal=yes
+AES-256-CFB1   nid=652  type=429  encrypt=ok decrypt=1 out=30 equal=no
+AES-256-CFB8   nid=655  type=429  encrypt=ok decrypt=1 out=30 equal=no
+DES-EDE3-CFB   nid=61   type=61   encrypt=NULL decrypt=-9 out=0 equal=no err=unsupported content encryption algorithm
+DES-EDE3-CFB1  nid=658  type=61   encrypt=NULL decrypt=-9 out=0 equal=no err=unsupported content encryption algorithm
+DES-EDE3-CFB8  nid=659  type=61   encrypt=NULL decrypt=-9 out=0 equal=no err=unsupported content encryption algorithm
+AES-128-OFB    nid=420  type=420  encrypt=ok decrypt=1 out=30 equal=yes
+AES-128-CTR    nid=904  type=0    encrypt=NULL decrypt=-9 out=0 equal=no err=unsupported content encryption algorithm
+AES-128-CBC    nid=419  type=419  encrypt=ok decrypt=1 out=30 equal=yes
+DES-EDE3-CBC   nid=44   type=44   encrypt=ok decrypt=1 out=30 equal=yes
+AES-128-GCM    nid=895  type=895  encrypt=ok decrypt=1 out=30 equal=yes

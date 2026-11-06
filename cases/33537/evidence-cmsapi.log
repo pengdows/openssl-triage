@@ -1,0 +1,50 @@
+# The results of this test will end up in test-runs/test_cmsapi
+1..1
+#     # Subtest: ../../test/cmsapitest
+#     1..30
+#     ok 1 - test_encrypt_decrypt_aes_cbc
+#     ok 2 - test_encrypt_decrypt_aes_cfb
+#     ok 3 - test_encrypt_rejects_ambiguous_cfb_oid
+#     ok 4 - test_encrypt_decrypt_aes_128_gcm
+#     ok 5 - test_encrypt_decrypt_aes_192_gcm
+#     ok 6 - test_encrypt_decrypt_aes_256_gcm
+#     ok 7 - test_non_aead_on_auth_envelope_enc
+#     ok 8 - test_non_aead_on_auth_envelope_dec
+#     ok 9 - test_short_mac_on_auth_envelope_data
+#     ok 10 - test_CMS_add_standard_smimecap_ex
+#     ok 11 - test_decrypt_with_wrong_key
+#         # Subtest: test_decrypt_key_length
+#         1..8
+#         ok 1 - iteration 1
+#         ok 2 - iteration 2
+#         ok 3 - iteration 3
+#         ok 4 - iteration 4
+#         ok 5 - iteration 5
+#         ok 6 - iteration 6
+#         ok 7 - iteration 7
+#         ok 8 - iteration 8
+#     ok 12 - test_decrypt_key_length
+#     ok 13 - test_CMS_add1_cert
+#     ok 14 - test_CMS_SignerInfo_verify_sigalg_oid
+#     ok 15 - test_CMS_verify_result_no_signer_cert
+#     ok 16 - test_CMS_verify_result_partial_signer_cert
+#     ok 17 - test_CMS_verify_reused_after_check_content_failure
+#     ok 18 - test_CMS_verify_result_partial_independence
+#     ok 19 - test_d2i_CMS_bio_NULL
+#     ok 20 - test_CMS_set1_key_mem_leak
+#     ok 21 - test_encrypted_data
+#     ok 22 - test_encrypted_data_aead
+#         # Subtest: test_d2i_CMS_decode
+#         1..2
+#         ok 9 - iteration 1
+#         ok 10 - iteration 2
+#     ok 23 - test_d2i_CMS_decode
+#     ok 24 - test_cms_aesgcm_iv_too_long
+#     ok 25 - test_pwri_kek_unwrap_short_encrypted_key
+#     ok 26 - test_pwri_kek_unwrap_no_iv_key
+#     ok 27 - test_CMS_add1_signer_ed448_signed_attrs
+#     ok 28 - test_CMS_add1_signer_ed448_signed_attrs_md
+#     ok 29 - test_CMS_add1_signer_ed448_noattr
+#     ok 30 - test_kari_wrap_pad_unwrap_overflow
+../../util/wrap.pl ../../test/cmsapitest ../../test/certs/servercert.pem ../../test/certs/serverkey.pem ../../test/recipes/80-test_cmsapi_data/encryptedData.der ../../test/recipes/80-test_cmsapi_data/encDataWithTooLongIV.pem ../../test/recipes/80-test_cmsapi_data/cms_pwri_kek_oob.der ../../test/recipes/80-test_cmsapi_data/cms_pwri_kek_NoIV.der ../../test/smime-certs/smec1.pem ../../test/certs/alt1-cert.pem ../../test/certs/alt1-key.pem ../../test/certs/server-ed448-cert.pem ../../test/certs/server-ed448-key.pem => 0
+ok 1 - running cmsapitest

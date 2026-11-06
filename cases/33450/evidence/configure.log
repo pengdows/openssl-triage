@@ -1,0 +1,391 @@
+Configuring OpenSSL version 4.2.0-dev for target linux-x86_64
+Using os-specific seed configuration
+Created configdata.pm
+Running configdata.pm
+Created Makefile.in
+Created Makefile
+Created include/openssl/configuration.h
+Created apps/include/configuration.h
+
+**********************************************************************
+***                                                                ***
+***   OpenSSL has been successfully configured                     ***
+***                                                                ***
+***   If you encounter a problem while building, please open an    ***
+***   issue on GitHub <https://github.com/openssl/openssl/issues>  ***
+***   and include the output from the following command:           ***
+***                                                                ***
+***       perl configdata.pm --dump                                ***
+***                                                                ***
+***   (If you are new to OpenSSL, you might want to consult the    ***
+***   'Troubleshooting' section in the INSTALL.md file first)      ***
+***                                                                ***
+**********************************************************************
+/usr/bin/perl ./util/file-from-stdout.pl builddata.pm /usr/bin/perl util/mkinstallvars.pl COMMENT="This file should be used when building against this OpenSSL build, and should never be installed" PREFIX=. BINDIR=apps APPLINKDIR=ms LIBDIR= INCLUDEDIR=include "INCLUDEDIR=./include" MODULESDIR=providers libdir= CMAKECONFIGDIR= PKGCONFIGDIR= "VERSION=4.2.0-dev" "LDLIBS=-ldl -pthread "
+/usr/bin/perl ./util/file-from-stdout.pl crypto/sslerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit crypto/sslerr.h
+/usr/bin/perl ./util/file-from-stdout.pl installdata.pm /usr/bin/perl util/mkinstallvars.pl COMMENT="This file provides configuration information for OpenSSL" "PREFIX=/usr/local" BINDIR=bin "LIBDIR=lib64" "libdir=/usr/local/lib64" INCLUDEDIR=include APPLINKDIR=include/openssl "MODULESDIR=/usr/local/lib64/ossl-modules" "PKGCONFIGDIR=/usr/local/lib64/pkgconfig" "CMAKECONFIGDIR=/usr/local/lib64/cmake/OpenSSL" "LDLIBS=-ldl -pthread " "VERSION=4.2.0-dev"
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/asn1err.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/asn1err.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/asyncerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/asyncerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/bioerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/bioerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/bnerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/bnerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/buffererr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/buffererr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/cmperr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/cmperr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/cmserr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/cmserr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/comperr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/comperr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/conferr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/conferr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/crmferr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/crmferr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/cryptoerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/cryptoerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/cterr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/cterr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/decodererr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/decodererr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/dherr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/dherr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/dsaerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/dsaerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/dso_conf.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/crypto/dso_conf.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/ec_params.h \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" include/crypto/ec_params.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/ecerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/ecerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/encodererr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/encodererr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/esserr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/esserr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/evperr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/evperr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/httperr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/httperr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/objectserr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/objectserr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/ocsperr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/ocsperr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/pemerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/pemerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/pkcs12err.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/pkcs12err.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/pkcs7err.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/pkcs7err.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/randerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/randerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/rsa_params.h \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" include/crypto/rsa_params.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/rsaerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/rsaerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/sm2err.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/sm2err.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/storeerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/storeerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/tserr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/tserr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/uierr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/uierr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/x509err.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/x509err.h
+/usr/bin/perl ./util/file-from-stdout.pl include/crypto/x509v3err.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/crypto/x509v3err.h
+/usr/bin/perl ./util/file-from-stdout.pl include/internal/dsoerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/internal/dsoerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/internal/propertyerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/internal/propertyerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/asn1.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/asn1.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/asn1err.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/asn1err.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/asn1t.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/asn1t.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/asyncerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/asyncerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/bio.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/bio.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/bioerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/bioerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/bnerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/bnerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/buffererr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/buffererr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/cmp.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/cmp.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/cmperr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/cmperr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/cms.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/cms.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/cmserr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/cmserr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/comp.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/comp.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/comperr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/comperr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/conf.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/conf.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/conferr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/conferr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/core_names.h \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" include/openssl/core_names.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/crmf.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/crmf.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/crmferr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/crmferr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/crypto.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/crypto.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/cryptoerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/cryptoerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/ct.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/ct.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/cterr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/cterr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/decodererr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/decodererr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/dherr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/dherr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/dsaerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/dsaerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/ecerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/ecerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/encodererr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/encodererr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/err.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/err.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/ess.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/ess.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/esserr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/esserr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/evp.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/evp.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/evperr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/evperr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/fipskey.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/fipskey.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/httperr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/httperr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/lhash.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/lhash.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/obj_mac.h /usr/bin/perl crypto/objects/objects.pl -a ./crypto/objects/obj_compat.h ./crypto/objects/objects.txt ./crypto/objects/obj_mac.num
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/objectserr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/objectserr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/ocsp.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/ocsp.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/ocsperr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/ocsperr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/opensslv.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/opensslv.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/pemerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/pemerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/pkcs12.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/pkcs12.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/pkcs12err.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/pkcs12err.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/pkcs7.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/pkcs7.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/pkcs7err.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/pkcs7err.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/proverr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/proverr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/randerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/randerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/rsaerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/rsaerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/safestack.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/safestack.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/srp.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/srp.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/ssl.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/ssl.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/sslerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/sslerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/storeerr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/storeerr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/tserr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/tserr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/ui.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/ui.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/uierr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/uierr.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/x509.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/x509.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/x509_acert.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/x509_acert.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/x509_vfy.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/x509_vfy.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/x509err.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/x509err.h
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/x509v3.h \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/x509v3.h.in
+/usr/bin/perl ./util/file-from-stdout.pl include/openssl/x509v3err.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit include/openssl/x509v3err.h
+/usr/bin/perl ./util/file-from-stdout.pl libcrypto.pc \
+	/usr/bin/perl "-I." "-Mconfigdata" "-Mbuilddata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/libcrypto.pc.in
+/usr/bin/perl ./util/file-from-stdout.pl libssl.pc \
+	/usr/bin/perl "-I." "-Mconfigdata" "-Mbuilddata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/libssl.pc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/common/include/prov/proverr.h /usr/bin/perl util/mkerr.pl -internal -conf ./crypto/err/openssl.ec -emit providers/common/include/prov/proverr.h
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/asymciphers/rsa_enc.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/asymciphers/rsa_enc.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/asymciphers/sm2_enc.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/asymciphers/sm2_enc.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_aes_cbc_hmac_sha.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_aes_cbc_hmac_sha.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_aes_cbc_hmac_sha_etm.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_aes_cbc_hmac_sha_etm.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_aes_gcm_siv.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_aes_gcm_siv.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_aes_ocb.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_aes_ocb.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_aes_siv.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_aes_siv.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_aes_wrp.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_aes_wrp.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_aes_xts.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_aes_xts.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_ascon_aead128.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_ascon_aead128.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_chacha20.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_chacha20.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_chacha20_poly1305.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_chacha20_poly1305.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_cts.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_cts.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_des.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_des.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_null.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_null.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_rc2.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_rc2.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_rc4_hmac_md5.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_rc4_hmac_md5.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_rc5.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_rc5.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_sm4_xts.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_sm4_xts.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/cipher_tdes.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/cipher_tdes.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/ciphercommon.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/ciphercommon.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/ciphercommon_ccm.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/ciphercommon_ccm.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/ciphers/ciphercommon_gcm.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/ciphers/ciphercommon_gcm.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/digests/blake2_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/digests/blake2_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/digests/cshake_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/digests/cshake_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/digests/digestcommon.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/digests/digestcommon.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/digests/mdc2_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/digests/mdc2_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/digests/ml_dsa_mu_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/digests/ml_dsa_mu_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/digests/sha2_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/digests/sha2_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/digests/sha3_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/digests/sha3_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/encode_decode/decode_der2key.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/encode_decode/decode_der2key.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/encode_decode/decode_epki2pki.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/encode_decode/decode_epki2pki.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/encode_decode/decode_pem2der.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/encode_decode/decode_pem2der.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/encode_decode/decode_pvk2key.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/encode_decode/decode_pvk2key.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/encode_decode/decode_spki2typespki.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/encode_decode/decode_spki2typespki.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/encode_decode/encode_key2any.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/encode_decode/encode_key2any.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/encode_decode/encode_key2ms.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/encode_decode/encode_key2ms.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/exchange/dh_exch.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/exchange/dh_exch.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/exchange/ecdh_exch.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/exchange/ecdh_exch.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/exchange/ecx_exch.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/exchange/ecx_exch.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/include/prov/blake2_params.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/include/prov/blake2_params.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/argon2.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/argon2.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/hkdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/hkdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/hmacdrbg_kdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/hmacdrbg_kdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/ikev2kdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/ikev2kdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/kbkdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/kbkdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/krb5kdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/krb5kdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/pbkdf1.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/pbkdf1.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/pbkdf2.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/pbkdf2.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/pkcs12kdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/pkcs12kdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/pvkkdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/pvkkdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/scrypt.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/scrypt.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/snmpkdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/snmpkdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/srtpkdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/srtpkdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/sshkdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/sshkdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/sskdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/sskdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/tls1_prf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/tls1_prf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/x942kdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/x942kdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kdfs/x963kdf.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kdfs/x963kdf.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kem/ec_kem.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kem/ec_kem.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kem/ecx_kem.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kem/ecx_kem.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kem/ml_kem_kem.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kem/ml_kem_kem.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kem/mlx_kem.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kem/mlx_kem.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/kem/rsa_kem.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/kem/rsa_kem.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/keymgmt/dh_kmgmt.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/keymgmt/dh_kmgmt.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/keymgmt/dsa_kmgmt.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/keymgmt/dsa_kmgmt.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/keymgmt/ecx_kmgmt.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/keymgmt/ecx_kmgmt.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/keymgmt/keymgmtcommon.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/keymgmt/keymgmtcommon.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/keymgmt/lms_kmgmt.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/keymgmt/lms_kmgmt.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/keymgmt/mac_legacy_kmgmt.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/keymgmt/mac_legacy_kmgmt.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/keymgmt/ml_dsa_kmgmt.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/keymgmt/ml_dsa_kmgmt.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/keymgmt/ml_kem_kmgmt.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/keymgmt/ml_kem_kmgmt.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/keymgmt/mlx_kmgmt.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/keymgmt/mlx_kmgmt.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/keymgmt/slh_dsa_kmgmt.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/keymgmt/slh_dsa_kmgmt.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/keymgmt/template_kmgmt.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/keymgmt/template_kmgmt.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/macs/cmac_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/macs/cmac_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/macs/gmac_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/macs/gmac_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/macs/hmac_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/macs/hmac_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/macs/kmac_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/macs/kmac_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/macs/poly1305_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/macs/poly1305_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/macs/siphash_prov.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/macs/siphash_prov.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/rands/drbg_ctr.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/rands/drbg_ctr.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/rands/drbg_hash.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/rands/drbg_hash.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/rands/drbg_hmac.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/rands/drbg_hmac.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/rands/fips_crng_test.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/rands/fips_crng_test.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/rands/seed_src.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/rands/seed_src.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/rands/seed_src_jitter.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/rands/seed_src_jitter.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/rands/test_rng.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/rands/test_rng.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/signature/dsa_sig.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/signature/dsa_sig.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/signature/ecdsa_sig.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/signature/ecdsa_sig.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/signature/eddsa_sig.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/signature/eddsa_sig.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/signature/lms_signature.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/signature/lms_signature.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/signature/mac_legacy_sig.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/signature/mac_legacy_sig.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/signature/ml_dsa_sig.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/signature/ml_dsa_sig.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/signature/rsa_sig.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/signature/rsa_sig.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/signature/slh_dsa_sig.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/signature/slh_dsa_sig.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/signature/sm2_sig.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/signature/sm2_sig.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/skeymgmt/generic.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/skeymgmt/generic.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/storemgmt/file_store.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/storemgmt/file_store.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/storemgmt/file_store_any2obj.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/storemgmt/file_store_any2obj.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl providers/implementations/storemgmt/winstore_store.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" providers/implementations/storemgmt/winstore_store.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl ssl/record/methods/tls_common.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" ssl/record/methods/tls_common.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl ssl/t1_lib.inc \
+	/usr/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" ssl/t1_lib.inc.in
+/usr/bin/perl ./util/file-from-stdout.pl test/nocache-and-default.cnf \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" test/nocache-and-default.cnf.in
+/usr/bin/perl ./util/file-from-stdout.pl test/pathed.cnf \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" test/pathed.cnf.in
+/usr/bin/perl ./util/file-from-stdout.pl test/provider_internal_test.cnf \
+	/usr/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" test/provider_internal_test.cnf.in
+/usr/bin/perl ./util/file-from-stdout.pl OpenSSLConfig.cmake \
+	/usr/bin/perl "-I." "-Mconfigdata" "-Mbuilddata" "util/dofile.pl" "-oMakefile" exporters/cmake/OpenSSLConfig.cmake.in
+/usr/bin/perl ./util/file-from-stdout.pl exporters/OpenSSLConfig.cmake \
+	/usr/bin/perl "-I." "-Mconfigdata" "-Minstalldata" "util/dofile.pl" "-oMakefile" exporters/cmake/OpenSSLConfig.cmake.in
+/usr/bin/perl ./util/file-from-stdout.pl exporters/libcrypto.pc \
+	/usr/bin/perl "-I." "-Mconfigdata" "-Minstalldata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/libcrypto.pc.in
+/usr/bin/perl ./util/file-from-stdout.pl exporters/libssl.pc \
+	/usr/bin/perl "-I." "-Mconfigdata" "-Minstalldata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/libssl.pc.in
+/usr/bin/perl ./util/file-from-stdout.pl openssl.pc \
+	/usr/bin/perl "-I." "-Mconfigdata" "-Mbuilddata" "-Mbuilddata" "-Mbuilddata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/openssl.pc.in
+/usr/bin/perl ./util/file-from-stdout.pl OpenSSLConfigVersion.cmake \
+	/usr/bin/perl "-I." "-Mconfigdata" "-Mconfigdata" "-Mbuilddata" "util/dofile.pl" "-oMakefile" exporters/cmake/OpenSSLConfigVersion.cmake.in
+/usr/bin/perl ./util/file-from-stdout.pl exporters/OpenSSLConfigVersion.cmake \
+	/usr/bin/perl "-I." "-Mconfigdata" "-Mconfigdata" "-Minstalldata" "util/dofile.pl" "-oMakefile" exporters/cmake/OpenSSLConfigVersion.cmake.in
+/usr/bin/perl ./util/file-from-stdout.pl exporters/openssl.pc \
+	/usr/bin/perl "-I." "-Mconfigdata" "-Mconfigdata" "-Mconfigdata" "-Minstalldata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/openssl.pc.in

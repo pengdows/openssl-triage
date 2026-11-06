@@ -1,0 +1,21 @@
+File 'test/cmsapitest.c'
+Lines executed:81.82% of 748
+Branches executed:100.00% of 565
+Taken at least once:53.45% of 565
+Calls executed:98.83% of 768
+Creating 'cmsapitest.c.gcov'
+
+File 'include/openssl/err.h'
+Lines executed:80.00% of 5
+Branches executed:100.00% of 18
+Taken at least once:50.00% of 18
+No calls
+Creating 'err.h.gcov'
+
+File 'include/openssl/x509.h'
+Lines executed:0.00% of 4
+No branches
+Calls executed:0.00% of 3
+Creating 'x509.h.gcov'
+
+Lines executed:81.37% of 757

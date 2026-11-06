@@ -1,0 +1,20 @@
+{
+  "id": "33450",
+  "repository": "openssl/openssl",
+  "issue": 33450,
+  "issueUrl": "https://github.com/openssl/openssl/issues/33450",
+  "title": "EC_GROUP_cmp crashes for groups without generators",
+  "status": "open-help-wanted-as-checked-2026-11-05",
+  "claim": "Comparing two equal EC_GROUP objects created with curve parameters but no generator dereferences a NULL EC_POINT instead of returning a result or error.",
+  "revisions": {
+    "current": {
+      "commit": "8ba9860b555e35f6bdfaf80eeaa087e65fdcca11",
+      "url": "https://github.com/openssl/openssl/tree/8ba9860b555e35f6bdfaf80eeaa087e65fdcca11"
+    }
+  },
+  "notes": [
+    "The issue was open, unassigned, labeled help wanted and triaged: bug, with no linked PR when checked on 2026-11-05.",
+    "The issue cites a752594 as the affected version, but the OpenSSL GitHub commit API reports no commit for that SHA; this case tests the pinned current master revision instead.",
+    "The project-local patch is a candidate behavior fix, not an upstream-submitted change."
+  ]
+}

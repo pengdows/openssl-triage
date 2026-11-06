@@ -1,0 +1,22 @@
+# Local OpenSSL source checkouts (each contains its own Git repository).
+/work-openssl*/
+
+# Per-case downloads, extracted source trees, and generated build inputs.
+/cases/*/work/
+
+# .NET build and test output.
+**/[Bb]in/
+**/[Oo]bj/
+**/TestResults/
+
+# Local editor and operating-system files.
+.vs/
+.idea/
+*.user
+*.suo
+.DS_Store
+
+# Local environment settings and credentials.
+.env
+.env.*
+!.env.example

@@ -1,0 +1,14 @@
+File 'crypto/cms/cms_enc.c'
+Lines executed:70.97% of 155
+Branches executed:96.49% of 114
+Taken at least once:71.93% of 114
+Calls executed:62.50% of 120
+Creating 'cms_enc.c.gcov'
+
+File '/usr/include/x86_64-linux-gnu/bits/string_fortified.h'
+Lines executed:100.00% of 1
+No branches
+No calls
+Creating 'string_fortified.h.gcov'
+
+Lines executed:71.15% of 156

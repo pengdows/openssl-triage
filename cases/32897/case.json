@@ -1,0 +1,25 @@
+{
+  "id": "32897",
+  "repository": "openssl/openssl",
+  "issue": 32897,
+  "issueUrl": "https://github.com/openssl/openssl/issues/32897",
+  "title": "fuzz/provider.c: FuzzerTestOneInput return value",
+  "status": "resolved-upstream",
+  "claim": "The provider fuzz target returned 1 for inputs of 16 bytes or more, although the libFuzzer callback contract reserves nonzero values for rejection or future use.",
+  "contract": "https://github.com/llvm/llvm-project/blob/5a50c15fa686c9c49b78631ac42b133340867ae3/llvm/docs/LibFuzzer.md",
+  "revisions": {
+    "reported": {
+      "commit": "859aea422b5be17ee9fc0f7678e9de302eb67b72",
+      "url": "https://github.com/openssl/openssl/tree/859aea422b5be17ee9fc0f7678e9de302eb67b72"
+    },
+    "fix": {
+      "commit": "8daabd4167e53dc3539a9a33a985653813373e86",
+      "url": "https://github.com/openssl/openssl/commit/8daabd4167e53dc3539a9a33a985653813373e86"
+    }
+  },
+  "notes": [
+    "Issue #32897 is resolved upstream by commit 8daabd4167e53dc3539a9a33a985653813373e86.",
+    "The reported source revision is pinned to the full commit hash cited by the issue.",
+    "This is a historical regression fixture, not an unresolved finding to send OpenSSL."
+  ]
+}

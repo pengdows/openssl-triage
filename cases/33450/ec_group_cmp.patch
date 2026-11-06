@@ -1,0 +1,23 @@
+diff --git a/crypto/ec/ec_lib.c b/crypto/ec/ec_lib.c
+--- a/crypto/ec/ec_lib.c
++++ b/crypto/ec/ec_lib.c
+@@ -699,10 +699,15 @@
+     if (r || BN_cmp(a1, b1) != 0 || BN_cmp(a2, b2) != 0 || BN_cmp(a3, b3) != 0)
+         r = 1;
+ 
+-    /* XXX EC_POINT_cmp() assumes that the methods are equal */
+-    /* return 1 if the generators are different */
+-    if (r || EC_POINT_cmp(a, EC_GROUP_get0_generator(a), EC_GROUP_get0_generator(b), ctx) != 0)
+-        r = 1;
++    /* Compare generators only when both groups have one. */
++    if (!r) {
++        const EC_POINT *a_gen = EC_GROUP_get0_generator(a);
++        const EC_POINT *b_gen = EC_GROUP_get0_generator(b);
++
++        if (a_gen != b_gen && (a_gen == NULL || b_gen == NULL
++                               || EC_POINT_cmp(a, a_gen, b_gen, ctx) != 0))
++            r = 1;
++    }
+ 
+     if (!r) {
+         const BIGNUM *ao, *bo, *ac, *bc;

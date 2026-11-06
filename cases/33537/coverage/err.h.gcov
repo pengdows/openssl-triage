@@ -1,0 +1,483 @@
+        -:    0:Source:include/openssl/err.h
+        -:    0:Graph:test/cmsapitest-bin-cmsapitest.gcno
+        -:    0:Data:test/cmsapitest-bin-cmsapitest.gcda
+        -:    0:Runs:2
+        -:    1:/*
+        -:    2: * Copyright 1995-2026 The OpenSSL Project Authors. All Rights Reserved.
+        -:    3: *
+        -:    4: * Licensed under the Apache License 2.0 (the "License").  You may not use
+        -:    5: * this file except in compliance with the License.  You can obtain a copy
+        -:    6: * in the file LICENSE in the source distribution or at
+        -:    7: * https://www.openssl.org/source/license.html
+        -:    8: */
+        -:    9:
+        -:   10:/* clang-format off */
+        -:   11:
+        -:   12:/* clang-format on */
+        -:   13:
+        -:   14:#ifndef OPENSSL_ERR_H
+        -:   15:#define OPENSSL_ERR_H
+        -:   16:#pragma once
+        -:   17:
+        -:   18:#include <openssl/macros.h>
+        -:   19:#ifndef OPENSSL_NO_DEPRECATED_3_0
+        -:   20:#define HEADER_ERR_H
+        -:   21:#endif
+        -:   22:
+        -:   23:#include <openssl/e_os2.h>
+        -:   24:
+        -:   25:#ifndef OPENSSL_NO_STDIO
+        -:   26:#include <stdio.h>
+        -:   27:#include <stdlib.h>
+        -:   28:#endif
+        -:   29:
+        -:   30:#include <openssl/types.h>
+        -:   31:#include <openssl/bio.h>
+        -:   32:#include <openssl/lhash.h>
+        -:   33:#include <openssl/cryptoerr_legacy.h>
+        -:   34:
+        -:   35:#ifdef __cplusplus
+        -:   36:extern "C" {
+        -:   37:#endif
+        -:   38:
+        -:   39:#ifndef OPENSSL_NO_DEPRECATED_3_0
+        -:   40:#ifndef OPENSSL_NO_FILENAMES
+        -:   41:#define ERR_PUT_error(l, f, r, fn, ln) ERR_put_error(l, f, r, fn, ln)
+        -:   42:#else
+        -:   43:#define ERR_PUT_error(l, f, r, fn, ln) ERR_put_error(l, f, r, NULL, 0)
+        -:   44:#endif
+        -:   45:#endif
+        -:   46:
+        -:   47:#include <limits.h>
+        -:   48:#include <errno.h>
+        -:   49:
+        -:   50:#define ERR_TXT_MALLOCED 0x01
+        -:   51:#define ERR_TXT_STRING 0x02
+        -:   52:
+        -:   53:/* library */
+        -:   54:#define ERR_LIB_NONE 1
+        -:   55:#define ERR_LIB_SYS 2
+        -:   56:#define ERR_LIB_BN 3
+        -:   57:#define ERR_LIB_RSA 4
+        -:   58:#define ERR_LIB_DH 5
+        -:   59:#define ERR_LIB_EVP 6
+        -:   60:#define ERR_LIB_BUF 7
+        -:   61:#define ERR_LIB_OBJ 8
+        -:   62:#define ERR_LIB_PEM 9
+        -:   63:#define ERR_LIB_DSA 10
+        -:   64:#define ERR_LIB_X509 11
+        -:   65:/* #define ERR_LIB_METH         12 */
+        -:   66:#define ERR_LIB_ASN1 13
+        -:   67:#define ERR_LIB_CONF 14
+        -:   68:#define ERR_LIB_CRYPTO 15
+        -:   69:#define ERR_LIB_EC 16
+        -:   70:#define ERR_LIB_SSL 20
+        -:   71:/* #define ERR_LIB_SSL23        21 */
+        -:   72:/* #define ERR_LIB_SSL2         22 */
+        -:   73:/* #define ERR_LIB_SSL3         23 */
+        -:   74:/* #define ERR_LIB_RSAREF       30 */
+        -:   75:/* #define ERR_LIB_PROXY        31 */
+        -:   76:#define ERR_LIB_BIO 32
+        -:   77:#define ERR_LIB_PKCS7 33
+        -:   78:#define ERR_LIB_X509V3 34
+        -:   79:#define ERR_LIB_PKCS12 35
+        -:   80:#define ERR_LIB_RAND 36
+        -:   81:#define ERR_LIB_DSO 37
+        -:   82:#define ERR_LIB_ENGINE 38
+        -:   83:#define ERR_LIB_OCSP 39
+        -:   84:#define ERR_LIB_UI 40
+        -:   85:#define ERR_LIB_COMP 41
+        -:   86:#define ERR_LIB_ECDSA 42
+        -:   87:#define ERR_LIB_ECDH 43
+        -:   88:#define ERR_LIB_OSSL_STORE 44
+        -:   89:#define ERR_LIB_FIPS 45
+        -:   90:#define ERR_LIB_CMS 46
+        -:   91:#define ERR_LIB_TS 47
+        -:   92:#define ERR_LIB_HMAC 48
+        -:   93:/* # define ERR_LIB_JPAKE       49 */
+        -:   94:#define ERR_LIB_CT 50
+        -:   95:#define ERR_LIB_ASYNC 51
+        -:   96:#define ERR_LIB_KDF 52
+        -:   97:#define ERR_LIB_SM2 53
+        -:   98:#define ERR_LIB_ESS 54
+        -:   99:#define ERR_LIB_PROP 55
+        -:  100:#define ERR_LIB_CRMF 56
+        -:  101:#define ERR_LIB_PROV 57
+        -:  102:#define ERR_LIB_CMP 58
+        -:  103:#define ERR_LIB_OSSL_ENCODER 59
+        -:  104:#define ERR_LIB_OSSL_DECODER 60
+        -:  105:#define ERR_LIB_HTTP 61
+        -:  106:
+        -:  107:#define ERR_LIB_USER 128
+        -:  108:
+        -:  109:#ifndef OPENSSL_NO_DEPRECATED_3_0
+        -:  110:#define ASN1err(f, r) ERR_raise_data(ERR_LIB_ASN1, (r), NULL)
+        -:  111:#define ASYNCerr(f, r) ERR_raise_data(ERR_LIB_ASYNC, (r), NULL)
+        -:  112:#define BIOerr(f, r) ERR_raise_data(ERR_LIB_BIO, (r), NULL)
+        -:  113:#define BNerr(f, r) ERR_raise_data(ERR_LIB_BN, (r), NULL)
+        -:  114:#define BUFerr(f, r) ERR_raise_data(ERR_LIB_BUF, (r), NULL)
+        -:  115:#define CMPerr(f, r) ERR_raise_data(ERR_LIB_CMP, (r), NULL)
+        -:  116:#define CMSerr(f, r) ERR_raise_data(ERR_LIB_CMS, (r), NULL)
+        -:  117:#define COMPerr(f, r) ERR_raise_data(ERR_LIB_COMP, (r), NULL)
+        -:  118:#define CONFerr(f, r) ERR_raise_data(ERR_LIB_CONF, (r), NULL)
+        -:  119:#define CRMFerr(f, r) ERR_raise_data(ERR_LIB_CRMF, (r), NULL)
+        -:  120:#define CRYPTOerr(f, r) ERR_raise_data(ERR_LIB_CRYPTO, (r), NULL)
+        -:  121:#define CTerr(f, r) ERR_raise_data(ERR_LIB_CT, (r), NULL)
+        -:  122:#define DHerr(f, r) ERR_raise_data(ERR_LIB_DH, (r), NULL)
+        -:  123:#define DSAerr(f, r) ERR_raise_data(ERR_LIB_DSA, (r), NULL)
+        -:  124:#define DSOerr(f, r) ERR_raise_data(ERR_LIB_DSO, (r), NULL)
+        -:  125:#define ECDHerr(f, r) ERR_raise_data(ERR_LIB_ECDH, (r), NULL)
+        -:  126:#define ECDSAerr(f, r) ERR_raise_data(ERR_LIB_ECDSA, (r), NULL)
+        -:  127:#define ECerr(f, r) ERR_raise_data(ERR_LIB_EC, (r), NULL)
+        -:  128:#define ENGINEerr(f, r) ERR_raise_data(ERR_LIB_ENGINE, (r), NULL)
+        -:  129:#define ESSerr(f, r) ERR_raise_data(ERR_LIB_ESS, (r), NULL)
+        -:  130:#define EVPerr(f, r) ERR_raise_data(ERR_LIB_EVP, (r), NULL)
+        -:  131:#define FIPSerr(f, r) ERR_raise_data(ERR_LIB_FIPS, (r), NULL)
+        -:  132:#define HMACerr(f, r) ERR_raise_data(ERR_LIB_HMAC, (r), NULL)
+        -:  133:#define HTTPerr(f, r) ERR_raise_data(ERR_LIB_HTTP, (r), NULL)
+        -:  134:#define KDFerr(f, r) ERR_raise_data(ERR_LIB_KDF, (r), NULL)
+        -:  135:#define OBJerr(f, r) ERR_raise_data(ERR_LIB_OBJ, (r), NULL)
+        -:  136:#define OCSPerr(f, r) ERR_raise_data(ERR_LIB_OCSP, (r), NULL)
+        -:  137:#define OSSL_STOREerr(f, r) ERR_raise_data(ERR_LIB_OSSL_STORE, (r), NULL)
+        -:  138:#define PEMerr(f, r) ERR_raise_data(ERR_LIB_PEM, (r), NULL)
+        -:  139:#define PKCS12err(f, r) ERR_raise_data(ERR_LIB_PKCS12, (r), NULL)
+        -:  140:#define PKCS7err(f, r) ERR_raise_data(ERR_LIB_PKCS7, (r), NULL)
+        -:  141:#define PROPerr(f, r) ERR_raise_data(ERR_LIB_PROP, (r), NULL)
+        -:  142:#define PROVerr(f, r) ERR_raise_data(ERR_LIB_PROV, (r), NULL)
+        -:  143:#define RANDerr(f, r) ERR_raise_data(ERR_LIB_RAND, (r), NULL)
+        -:  144:#define RSAerr(f, r) ERR_raise_data(ERR_LIB_RSA, (r), NULL)
+        -:  145:#define KDFerr(f, r) ERR_raise_data(ERR_LIB_KDF, (r), NULL)
+        -:  146:#define SM2err(f, r) ERR_raise_data(ERR_LIB_SM2, (r), NULL)
+        -:  147:#define SSLerr(f, r) ERR_raise_data(ERR_LIB_SSL, (r), NULL)
+        -:  148:#define SYSerr(f, r) ERR_raise_data(ERR_LIB_SYS, (r), NULL)
+        -:  149:#define TSerr(f, r) ERR_raise_data(ERR_LIB_TS, (r), NULL)
+        -:  150:#define UIerr(f, r) ERR_raise_data(ERR_LIB_UI, (r), NULL)
+        -:  151:#define X509V3err(f, r) ERR_raise_data(ERR_LIB_X509V3, (r), NULL)
+        -:  152:#define X509err(f, r) ERR_raise_data(ERR_LIB_X509, (r), NULL)
+        -:  153:#endif
+        -:  154:
+        -:  155:/*-
+        -:  156: * The error code packs differently depending on if it records a system
+        -:  157: * error or an OpenSSL error.
+        -:  158: *
+        -:  159: * A system error packs like this (we follow POSIX and only allow positive
+        -:  160: * numbers that fit in an |int|):
+        -:  161: *
+        -:  162: * +-+-------------------------------------------------------------+
+        -:  163: * |1|                     system error number                     |
+        -:  164: * +-+-------------------------------------------------------------+
+        -:  165: *
+        -:  166: * An OpenSSL error packs like this:
+        -:  167: *
+        -:  168: * <---------------------------- 32 bits -------------------------->
+        -:  169: *    <--- 8 bits ---><------------------ 23 bits ----------------->
+        -:  170: * +-+---------------+---------------------------------------------+
+        -:  171: * |0|    library    |                    reason                   |
+        -:  172: * +-+---------------+---------------------------------------------+
+        -:  173: *
+        -:  174: * A few of the reason bits are reserved as flags with special meaning:
+        -:  175: *
+        -:  176: *                    <5 bits-<>--------- 19 bits ----------------->
+        -:  177: *                   +-------+-+-----------------------------------+
+        -:  178: *                   | rflags| |          reason                   |
+        -:  179: *                   +-------+-+-----------------------------------+
+        -:  180: *                            ^
+        -:  181: *                            |
+        -:  182: *                           ERR_RFLAG_FATAL = ERR_R_FATAL
+        -:  183: *
+        -:  184: * The reason flags are part of the overall reason code for practical
+        -:  185: * reasons, as they provide an easy way to place different types of
+        -:  186: * reason codes in different numeric ranges.
+        -:  187: *
+        -:  188: * The currently known reason flags are:
+        -:  189: *
+        -:  190: * ERR_RFLAG_FATAL      Flags that the reason code is considered fatal.
+        -:  191: *                      For backward compatibility reasons, this flag
+        -:  192: *                      is also the code for ERR_R_FATAL (that reason
+        -:  193: *                      code served the dual purpose of flag and reason
+        -:  194: *                      code in one in pre-3.0 OpenSSL).
+        -:  195: * ERR_RFLAG_COMMON     Flags that the reason code is common to all
+        -:  196: *                      libraries.  All ERR_R_ macros must use this flag,
+        -:  197: *                      and no other _R_ macro is allowed to use it.
+        -:  198: */
+        -:  199:
+        -:  200:/* Macros to help decode recorded system errors */
+        -:  201:#define ERR_SYSTEM_FLAG ((unsigned int)INT_MAX + 1)
+        -:  202:#define ERR_SYSTEM_MASK ((unsigned int)INT_MAX)
+        -:  203:
+        -:  204:/*
+        -:  205: * Macros to help decode recorded OpenSSL errors
+        -:  206: * As expressed above, RFLAGS and REASON overlap by one bit to allow
+        -:  207: * ERR_R_FATAL to use ERR_RFLAG_FATAL as its reason code.
+        -:  208: */
+        -:  209:#define ERR_LIB_OFFSET 23L
+        -:  210:#define ERR_LIB_MASK 0xFF
+        -:  211:#define ERR_RFLAGS_OFFSET 18L
+        -:  212:#define ERR_RFLAGS_MASK 0x1F
+        -:  213:#define ERR_REASON_MASK 0X7FFFFF
+        -:  214:
+        -:  215:/*
+        -:  216: * Reason flags are defined pre-shifted to easily combine with the reason
+        -:  217: * number.
+        -:  218: */
+        -:  219:#define ERR_RFLAG_FATAL (0x1 << ERR_RFLAGS_OFFSET)
+        -:  220:#define ERR_RFLAG_COMMON (0x2 << ERR_RFLAGS_OFFSET)
+        -:  221:
+        -:  222:#define ERR_SYSTEM_ERROR(errcode) (((errcode) & ERR_SYSTEM_FLAG) != 0)
+        -:  223:
+        -:  224:static ossl_unused ossl_inline int ERR_GET_LIB(unsigned long errcode)
+        -:  225:{
+        6:  226:    if (ERR_SYSTEM_ERROR(errcode))
+branch  0 taken 2 (fallthrough)
+branch  1 taken 0
+branch  2 taken 2 (fallthrough)
+branch  3 taken 0
+branch  4 taken 2 (fallthrough)
+branch  5 taken 0
+        -:  227:        return ERR_LIB_SYS;
+        6:  228:    return (errcode >> ERR_LIB_OFFSET) & ERR_LIB_MASK;
+        -:  229:}
+        -:  230:
+        -:  231:static ossl_unused ossl_inline int ERR_GET_RFLAGS(unsigned long errcode)
+        -:  232:{
+        -:  233:    if (ERR_SYSTEM_ERROR(errcode))
+        -:  234:        return 0;
+        -:  235:    return errcode & (ERR_RFLAGS_MASK << ERR_RFLAGS_OFFSET);
+        -:  236:}
+        -:  237:
+        -:  238:static ossl_unused ossl_inline int ERR_GET_REASON(unsigned long errcode)
+        -:  239:{
+       22:  240:    if (ERR_SYSTEM_ERROR(errcode))
+branch  0 taken 0 (fallthrough)
+branch  1 taken 2
+branch  2 taken 0 (fallthrough)
+branch  3 taken 2
+branch  4 taken 0 (fallthrough)
+branch  5 taken 2
+branch  6 taken 0 (fallthrough)
+branch  7 taken 2
+branch  8 taken 0 (fallthrough)
+branch  9 taken 2
+branch 10 taken 0 (fallthrough)
+branch 11 taken 12
+    #####:  241:        return errcode & ERR_SYSTEM_MASK;
+       22:  242:    return errcode & ERR_REASON_MASK;
+        -:  243:}
+        -:  244:
+        -:  245:static ossl_unused ossl_inline int ERR_FATAL_ERROR(unsigned long errcode)
+        -:  246:{
+        -:  247:    return (ERR_GET_RFLAGS(errcode) & ERR_RFLAG_FATAL) != 0;
+        -:  248:}
+        -:  249:
+        -:  250:static ossl_unused ossl_inline int ERR_COMMON_ERROR(unsigned long errcode)
+        -:  251:{
+        -:  252:    return (ERR_GET_RFLAGS(errcode) & ERR_RFLAG_COMMON) != 0;
+        -:  253:}
+        -:  254:
+        -:  255:/*
+        -:  256: * ERR_PACK is a helper macro to properly pack OpenSSL error codes and may
+        -:  257: * only be used for that purpose.  System errors are packed internally.
+        -:  258: * ERR_PACK takes reason flags and reason code combined in |reason|.
+        -:  259: * ERR_PACK ignores |func|, that parameter is just legacy from pre-3.0 OpenSSL.
+        -:  260: */
+        -:  261:#define ERR_PACK(lib, func, reason) \
+        -:  262:    ((((unsigned long)(lib) & ERR_LIB_MASK) << ERR_LIB_OFFSET) | (((unsigned long)(reason) & ERR_REASON_MASK)))
+        -:  263:
+        -:  264:/*
+        -:  265: * All ERR_R_ codes must be combined with ERR_RFLAG_COMMON.
+        -:  266: */
+        -:  267:
+        -:  268:/* "we came from here" global reason codes, range 1..255 */
+        -:  269:#define ERR_R_SYS_LIB (ERR_LIB_SYS /* 2 */ | ERR_RFLAG_COMMON)
+        -:  270:#define ERR_R_BN_LIB (ERR_LIB_BN /* 3 */ | ERR_RFLAG_COMMON)
+        -:  271:#define ERR_R_RSA_LIB (ERR_LIB_RSA /* 4 */ | ERR_RFLAG_COMMON)
+        -:  272:#define ERR_R_DH_LIB (ERR_LIB_DH /* 5 */ | ERR_RFLAG_COMMON)
+        -:  273:#define ERR_R_EVP_LIB (ERR_LIB_EVP /* 6 */ | ERR_RFLAG_COMMON)
+        -:  274:#define ERR_R_BUF_LIB (ERR_LIB_BUF /* 7 */ | ERR_RFLAG_COMMON)
+        -:  275:#define ERR_R_OBJ_LIB (ERR_LIB_OBJ /* 8 */ | ERR_RFLAG_COMMON)
+        -:  276:#define ERR_R_PEM_LIB (ERR_LIB_PEM /* 9 */ | ERR_RFLAG_COMMON)
+        -:  277:#define ERR_R_DSA_LIB (ERR_LIB_DSA /* 10 */ | ERR_RFLAG_COMMON)
+        -:  278:#define ERR_R_X509_LIB (ERR_LIB_X509 /* 11 */ | ERR_RFLAG_COMMON)
+        -:  279:#define ERR_R_ASN1_LIB (ERR_LIB_ASN1 /* 13 */ | ERR_RFLAG_COMMON)
+        -:  280:#define ERR_R_CONF_LIB (ERR_LIB_CONF /* 14 */ | ERR_RFLAG_COMMON)
+        -:  281:#define ERR_R_CRYPTO_LIB (ERR_LIB_CRYPTO /* 15 */ | ERR_RFLAG_COMMON)
+        -:  282:#define ERR_R_EC_LIB (ERR_LIB_EC /* 16 */ | ERR_RFLAG_COMMON)
+        -:  283:#define ERR_R_SSL_LIB (ERR_LIB_SSL /* 20 */ | ERR_RFLAG_COMMON)
+        -:  284:#define ERR_R_BIO_LIB (ERR_LIB_BIO /* 32 */ | ERR_RFLAG_COMMON)
+        -:  285:#define ERR_R_PKCS7_LIB (ERR_LIB_PKCS7 /* 33 */ | ERR_RFLAG_COMMON)
+        -:  286:#define ERR_R_X509V3_LIB (ERR_LIB_X509V3 /* 34 */ | ERR_RFLAG_COMMON)
+        -:  287:#define ERR_R_PKCS12_LIB (ERR_LIB_PKCS12 /* 35 */ | ERR_RFLAG_COMMON)
+        -:  288:#define ERR_R_RAND_LIB (ERR_LIB_RAND /* 36 */ | ERR_RFLAG_COMMON)
+        -:  289:#define ERR_R_DSO_LIB (ERR_LIB_DSO /* 37 */ | ERR_RFLAG_COMMON)
+        -:  290:#define ERR_R_ENGINE_LIB (ERR_LIB_ENGINE /* 38 */ | ERR_RFLAG_COMMON)
+        -:  291:#define ERR_R_UI_LIB (ERR_LIB_UI /* 40 */ | ERR_RFLAG_COMMON)
+        -:  292:#define ERR_R_ECDSA_LIB (ERR_LIB_ECDSA /* 42 */ | ERR_RFLAG_COMMON)
+        -:  293:#define ERR_R_OSSL_STORE_LIB (ERR_LIB_OSSL_STORE /* 44 */ | ERR_RFLAG_COMMON)
+        -:  294:#define ERR_R_CMS_LIB (ERR_LIB_CMS /* 46 */ | ERR_RFLAG_COMMON)
+        -:  295:#define ERR_R_TS_LIB (ERR_LIB_TS /* 47 */ | ERR_RFLAG_COMMON)
+        -:  296:#define ERR_R_CT_LIB (ERR_LIB_CT /* 50 */ | ERR_RFLAG_COMMON)
+        -:  297:#define ERR_R_PROV_LIB (ERR_LIB_PROV /* 57 */ | ERR_RFLAG_COMMON)
+        -:  298:#define ERR_R_ESS_LIB (ERR_LIB_ESS /* 54 */ | ERR_RFLAG_COMMON)
+        -:  299:#define ERR_R_CMP_LIB (ERR_LIB_CMP /* 58 */ | ERR_RFLAG_COMMON)
+        -:  300:#define ERR_R_OSSL_ENCODER_LIB (ERR_LIB_OSSL_ENCODER /* 59 */ | ERR_RFLAG_COMMON)
+        -:  301:#define ERR_R_OSSL_DECODER_LIB (ERR_LIB_OSSL_DECODER /* 60 */ | ERR_RFLAG_COMMON)
+        -:  302:
+        -:  303:/* Other common error codes, range 256..2^ERR_RFLAGS_OFFSET-1 */
+        -:  304:#define ERR_R_FATAL (ERR_RFLAG_FATAL | ERR_RFLAG_COMMON)
+        -:  305:#define ERR_R_MALLOC_FAILURE (256 | ERR_R_FATAL)
+        -:  306:#define ERR_R_SHOULD_NOT_HAVE_BEEN_CALLED (257 | ERR_R_FATAL)
+        -:  307:#define ERR_R_PASSED_NULL_PARAMETER (258 | ERR_R_FATAL)
+        -:  308:#define ERR_R_INTERNAL_ERROR (259 | ERR_R_FATAL)
+        -:  309:#define ERR_R_DISABLED (260 | ERR_R_FATAL)
+        -:  310:#define ERR_R_INIT_FAIL (261 | ERR_R_FATAL)
+        -:  311:#define ERR_R_PASSED_INVALID_ARGUMENT (262 | ERR_RFLAG_COMMON)
+        -:  312:#define ERR_R_OPERATION_FAIL (263 | ERR_R_FATAL)
+        -:  313:#define ERR_R_INVALID_PROVIDER_FUNCTIONS (264 | ERR_R_FATAL)
+        -:  314:#define ERR_R_INTERRUPTED_OR_CANCELLED (265 | ERR_RFLAG_COMMON)
+        -:  315:#define ERR_R_NESTED_ASN1_ERROR (266 | ERR_RFLAG_COMMON)
+        -:  316:#define ERR_R_MISSING_ASN1_EOS (267 | ERR_RFLAG_COMMON)
+        -:  317:#define ERR_R_UNSUPPORTED (268 | ERR_RFLAG_COMMON)
+        -:  318:#define ERR_R_FETCH_FAILED (269 | ERR_RFLAG_COMMON)
+        -:  319:#define ERR_R_INVALID_PROPERTY_DEFINITION (270 | ERR_RFLAG_COMMON)
+        -:  320:#define ERR_R_UNABLE_TO_GET_READ_LOCK (271 | ERR_R_FATAL)
+        -:  321:#define ERR_R_UNABLE_TO_GET_WRITE_LOCK (272 | ERR_R_FATAL)
+        -:  322:
+        -:  323:typedef struct ERR_string_data_st {
+        -:  324:    unsigned long error;
+        -:  325:    const char *string;
+        -:  326:} ERR_STRING_DATA;
+        -:  327:
+        -:  328:/* clang-format off */
+        -:  329:DEFINE_LHASH_OF_INTERNAL(ERR_STRING_DATA);
+        -:  330:#define lh_ERR_STRING_DATA_new(hfn, cmp) ((LHASH_OF(ERR_STRING_DATA) *)OPENSSL_LH_set_thunks(OPENSSL_LH_new(ossl_check_ERR_STRING_DATA_lh_hashfunc_type(hfn), ossl_check_ERR_STRING_DATA_lh_compfunc_type(cmp)), lh_ERR_STRING_DATA_hash_thunk, lh_ERR_STRING_DATA_comp_thunk, lh_ERR_STRING_DATA_doall_thunk, lh_ERR_STRING_DATA_doall_arg_thunk))
+        -:  331:#define lh_ERR_STRING_DATA_free(lh) OPENSSL_LH_free(ossl_check_ERR_STRING_DATA_lh_type(lh))
+        -:  332:#define lh_ERR_STRING_DATA_flush(lh) OPENSSL_LH_flush(ossl_check_ERR_STRING_DATA_lh_type(lh))
+        -:  333:#define lh_ERR_STRING_DATA_insert(lh, ptr) ((ERR_STRING_DATA *)OPENSSL_LH_insert(ossl_check_ERR_STRING_DATA_lh_type(lh), ossl_check_ERR_STRING_DATA_lh_plain_type(ptr)))
+        -:  334:#define lh_ERR_STRING_DATA_delete(lh, ptr) ((ERR_STRING_DATA *)OPENSSL_LH_delete(ossl_check_ERR_STRING_DATA_lh_type(lh), ossl_check_const_ERR_STRING_DATA_lh_plain_type(ptr)))
+        -:  335:#define lh_ERR_STRING_DATA_retrieve(lh, ptr) ((ERR_STRING_DATA *)OPENSSL_LH_retrieve(ossl_check_ERR_STRING_DATA_lh_type(lh), ossl_check_const_ERR_STRING_DATA_lh_plain_type(ptr)))
+        -:  336:#define lh_ERR_STRING_DATA_error(lh) OPENSSL_LH_error(ossl_check_ERR_STRING_DATA_lh_type(lh))
+        -:  337:#define lh_ERR_STRING_DATA_num_items(lh) OPENSSL_LH_num_items(ossl_check_ERR_STRING_DATA_lh_type(lh))
+        -:  338:#define lh_ERR_STRING_DATA_node_stats_bio(lh, out) OPENSSL_LH_node_stats_bio(ossl_check_const_ERR_STRING_DATA_lh_type(lh), out)
+        -:  339:#define lh_ERR_STRING_DATA_node_usage_stats_bio(lh, out) OPENSSL_LH_node_usage_stats_bio(ossl_check_const_ERR_STRING_DATA_lh_type(lh), out)
+        -:  340:#define lh_ERR_STRING_DATA_stats_bio(lh, out) OPENSSL_LH_stats_bio(ossl_check_const_ERR_STRING_DATA_lh_type(lh), out)
+        -:  341:#define lh_ERR_STRING_DATA_get_down_load(lh) OPENSSL_LH_get_down_load(ossl_check_ERR_STRING_DATA_lh_type(lh))
+        -:  342:#define lh_ERR_STRING_DATA_set_down_load(lh, dl) OPENSSL_LH_set_down_load(ossl_check_ERR_STRING_DATA_lh_type(lh), dl)
+        -:  343:#define lh_ERR_STRING_DATA_doall(lh, dfn) OPENSSL_LH_doall(ossl_check_ERR_STRING_DATA_lh_type(lh), ossl_check_ERR_STRING_DATA_lh_doallfunc_type(dfn))
+        -:  344:
+        -:  345:/* clang-format on */
+        -:  346:
+        -:  347:/* 12 lines and some on an 80 column terminal */
+        -:  348:#define ERR_MAX_DATA_SIZE 1024
+        -:  349:
+        -:  350:/* Building blocks */
+        -:  351:void ERR_new(void);
+        -:  352:void ERR_set_debug(const char *file, int line, const char *func);
+        -:  353:void ERR_set_error(int lib, int reason, const char *fmt, ...);
+        -:  354:void ERR_vset_error(int lib, int reason, const char *fmt, va_list args);
+        -:  355:
+        -:  356:/* Main error raising functions */
+        -:  357:#define ERR_raise(lib, reason) ERR_raise_data((lib), (reason), NULL)
+        -:  358:#define ERR_raise_data                                           \
+        -:  359:    (ERR_new(),                                                  \
+        -:  360:        ERR_set_debug(OPENSSL_FILE, OPENSSL_LINE, OPENSSL_FUNC), \
+        -:  361:        ERR_set_error)
+        -:  362:
+        -:  363:#ifndef OPENSSL_NO_DEPRECATED_3_0
+        -:  364:/* Backward compatibility */
+        -:  365:#define ERR_put_error(lib, func, reason, file, line) \
+        -:  366:    (ERR_new(),                                      \
+        -:  367:        ERR_set_debug((file), (line), OPENSSL_FUNC), \
+        -:  368:        ERR_set_error((lib), (reason), NULL))
+        -:  369:#endif
+        -:  370:
+        -:  371:void ERR_set_error_data(char *data, int flags);
+        -:  372:
+        -:  373:unsigned long ERR_get_error(void);
+        -:  374:unsigned long ERR_get_error_all(const char **file, int *line,
+        -:  375:    const char **func,
+        -:  376:    const char **data, int *flags);
+        -:  377:#ifndef OPENSSL_NO_DEPRECATED_3_0
+        -:  378:OSSL_DEPRECATEDIN_3_0
+        -:  379:unsigned long ERR_get_error_line(const char **file, int *line);
+        -:  380:OSSL_DEPRECATEDIN_3_0
+        -:  381:unsigned long ERR_get_error_line_data(const char **file, int *line,
+        -:  382:    const char **data, int *flags);
+        -:  383:#endif
+        -:  384:unsigned long ERR_peek_error(void);
+        -:  385:unsigned long ERR_peek_error_line(const char **file, int *line);
+        -:  386:unsigned long ERR_peek_error_func(const char **func);
+        -:  387:unsigned long ERR_peek_error_data(const char **data, int *flags);
+        -:  388:unsigned long ERR_peek_error_all(const char **file, int *line,
+        -:  389:    const char **func,
+        -:  390:    const char **data, int *flags);
+        -:  391:#ifndef OPENSSL_NO_DEPRECATED_3_0
+        -:  392:OSSL_DEPRECATEDIN_3_0
+        -:  393:unsigned long ERR_peek_error_line_data(const char **file, int *line,
+        -:  394:    const char **data, int *flags);
+        -:  395:#endif
+        -:  396:unsigned long ERR_peek_last_error(void);
+        -:  397:unsigned long ERR_peek_last_error_line(const char **file, int *line);
+        -:  398:unsigned long ERR_peek_last_error_func(const char **func);
+        -:  399:unsigned long ERR_peek_last_error_data(const char **data, int *flags);
+        -:  400:unsigned long ERR_peek_last_error_all(const char **file, int *line,
+        -:  401:    const char **func,
+        -:  402:    const char **data, int *flags);
+        -:  403:#ifndef OPENSSL_NO_DEPRECATED_3_0
+        -:  404:OSSL_DEPRECATEDIN_3_0
+        -:  405:unsigned long ERR_peek_last_error_line_data(const char **file, int *line,
+        -:  406:    const char **data, int *flags);
+        -:  407:#endif
+        -:  408:
+        -:  409:void ERR_clear_error(void);
+        -:  410:
+        -:  411:char *ERR_error_string(unsigned long e, char *buf);
+        -:  412:void ERR_error_string_n(unsigned long e, char *buf, size_t len);
+        -:  413:const char *ERR_lib_error_string(unsigned long e);
+        -:  414:#ifndef OPENSSL_NO_DEPRECATED_3_0
+        -:  415:OSSL_DEPRECATEDIN_3_0 const char *ERR_func_error_string(unsigned long e);
+        -:  416:#endif
+        -:  417:const char *ERR_reason_error_string(unsigned long e);
+        -:  418:
+        -:  419:void ERR_print_errors_cb(int (*cb)(const char *str, size_t len, void *u),
+        -:  420:    void *u);
+        -:  421:#ifndef OPENSSL_NO_STDIO
+        -:  422:void ERR_print_errors_fp(FILE *fp);
+        -:  423:#endif
+        -:  424:void ERR_print_errors(BIO *bp);
+        -:  425:
+        -:  426:void ERR_add_error_data(int num, ...);
+        -:  427:void ERR_add_error_vdata(int num, va_list args);
+        -:  428:void ERR_add_error_txt(const char *sepr, const char *txt);
+        -:  429:void ERR_add_error_mem_bio(const char *sep, BIO *bio);
+        -:  430:
+        -:  431:int ERR_load_strings(int lib, ERR_STRING_DATA *str);
+        -:  432:int ERR_load_strings_const(const ERR_STRING_DATA *str);
+        -:  433:int ERR_unload_strings(int lib, ERR_STRING_DATA *str);
+        -:  434:
+        -:  435:#ifndef OPENSSL_NO_DEPRECATED_1_1_0
+        -:  436:#define ERR_load_crypto_strings() \
+        -:  437:    OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CRYPTO_STRINGS, NULL)
+        -:  438:#define ERR_free_strings() \
+        -:  439:    while (0)              \
+        -:  440:    continue
+        -:  441:#endif
+        -:  442:
+        -:  443:int ERR_get_next_error_library(void);
+        -:  444:
+        -:  445:int ERR_set_mark(void);
+        -:  446:int ERR_pop_to_mark(void);
+        -:  447:int ERR_clear_last_mark(void);
+        -:  448:int ERR_count_to_mark(void);
+        -:  449:int ERR_pop(void);
+        -:  450:
+        -:  451:ERR_STATE *OSSL_ERR_STATE_new(void);
+        -:  452:void OSSL_ERR_STATE_save(ERR_STATE *es);
+        -:  453:void OSSL_ERR_STATE_save_to_mark(ERR_STATE *es);
+        -:  454:void OSSL_ERR_STATE_restore(const ERR_STATE *es);
+        -:  455:void OSSL_ERR_STATE_free(ERR_STATE *es);
+        -:  456:
+        -:  457:#ifdef __cplusplus
+        -:  458:}
+        -:  459:#endif
+        -:  460:
+        -:  461:#endif

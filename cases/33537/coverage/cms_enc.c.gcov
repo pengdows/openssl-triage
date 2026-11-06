@@ -1,0 +1,533 @@
+        -:    0:Source:crypto/cms/cms_enc.c
+        -:    0:Graph:crypto/cms/libcrypto-lib-cms_enc.gcno
+        -:    0:Data:crypto/cms/libcrypto-lib-cms_enc.gcda
+        -:    0:Runs:4693
+        -:    1:/*
+        -:    2: * Copyright 2008-2026 The OpenSSL Project Authors. All Rights Reserved.
+        -:    3: *
+        -:    4: * Licensed under the Apache License 2.0 (the "License").  You may not use
+        -:    5: * this file except in compliance with the License.  You can obtain a copy
+        -:    6: * in the file LICENSE in the source distribution or at
+        -:    7: * https://www.openssl.org/source/license.html
+        -:    8: */
+        -:    9:
+        -:   10:#include "internal/cryptlib.h"
+        -:   11:#include <openssl/asn1t.h>
+        -:   12:#include <openssl/pem.h>
+        -:   13:#include <openssl/x509v3.h>
+        -:   14:#include <openssl/err.h>
+        -:   15:#include <openssl/cms.h>
+        -:   16:#include <openssl/rand.h>
+        -:   17:#include "crypto/evp.h"
+        -:   18:#include "crypto/asn1.h"
+        -:   19:#include "cms_local.h"
+        -:   20:#include "internal/sizes.h"
+        -:   21:
+        -:   22:/* CMS EncryptedData Utilities */
+        -:   23:
+        -:   24:/* Return BIO based on EncryptedContentInfo and key */
+        -:   25:
+function ossl_cms_EncryptedContent_init_bio called 2158 returned 100% blocks executed 68%
+     2158:   26:BIO *ossl_cms_EncryptedContent_init_bio(CMS_EncryptedContentInfo *ec,
+        -:   27:    const CMS_CTX *cms_ctx, int auth)
+        -:   28:{
+        -:   29:    BIO *b;
+        -:   30:    EVP_CIPHER_CTX *ctx;
+        -:   31:    EVP_CIPHER *fetched_ciph = NULL;
+        -:   32:    const EVP_CIPHER *cipher = NULL;
+     2158:   33:    X509_ALGOR *calg = ec->contentEncryptionAlgorithm;
+        -:   34:    evp_cipher_aead_asn1_params aparams;
+        -:   35:    unsigned char iv[EVP_MAX_IV_LENGTH], *piv = NULL;
+        -:   36:    unsigned char *tkey = NULL;
+        -:   37:    int len;
+        -:   38:    int ivlen = 0;
+        -:   39:    size_t tkeylen = 0;
+        -:   40:    int ok = 0;
+        -:   41:    int enc, keep_key = 0;
+     2158:   42:    OSSL_LIB_CTX *libctx = ossl_cms_ctx_get0_libctx(cms_ctx);
+call    0 returned 2158
+     2158:   43:    const char *propq = ossl_cms_ctx_get0_propq(cms_ctx);
+call    0 returned 2158
+        -:   44:
+     2158:   45:    enc = ec->cipher ? 1 : 0;
+        -:   46:
+     2158:   47:    b = BIO_new(BIO_f_cipher());
+call    0 returned 2158
+call    1 returned 2158
+     2158:   48:    if (b == NULL) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 2158
+    #####:   49:        ERR_raise(ERR_LIB_CMS, ERR_R_BIO_LIB);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:   50:        return NULL;
+        -:   51:    }
+        -:   52:
+     2158:   53:    BIO_get_cipher_ctx(b, &ctx);
+call    0 returned 2158
+        -:   54:
+     2158:   55:    (void)ERR_set_mark();
+call    0 returned 2158
+     2158:   56:    if (enc) {
+branch  0 taken 76 (fallthrough)
+branch  1 taken 2082
+       76:   57:        cipher = ec->cipher;
+        -:   58:        /*
+        -:   59:         * If not keeping key set cipher to NULL so subsequent calls decrypt.
+        -:   60:         */
+       76:   61:        if (ec->key != NULL)
+branch  0 taken 6 (fallthrough)
+branch  1 taken 70
+        6:   62:            ec->cipher = NULL;
+        -:   63:    } else {
+     2082:   64:        cipher = EVP_get_cipherbyobj(calg->algorithm);
+call    0 returned 2082
+call    1 returned 2082
+call    2 returned 2082
+        -:   65:    }
+     2158:   66:    if (cipher != NULL) {
+branch  0 taken 2158 (fallthrough)
+branch  1 taken 0
+     2158:   67:        fetched_ciph = EVP_CIPHER_fetch(libctx, EVP_CIPHER_get0_name(cipher),
+call    0 returned 2158
+call    1 returned 2158
+        -:   68:            propq);
+        -:   69:    } else {
+        -:   70:        char txtoid[OSSL_MAX_NAME_SIZE];
+    #####:   71:        if (OBJ_obj2txt(txtoid, sizeof(txtoid), calg->algorithm, 1) > 0)
+call    0 never executed
+branch  1 never executed (fallthrough)
+branch  2 never executed
+    #####:   72:            fetched_ciph = EVP_CIPHER_fetch(libctx, txtoid, propq);
+call    0 never executed
+        -:   73:    }
+     2158:   74:    if (fetched_ciph != NULL)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 2158
+        -:   75:        cipher = fetched_ciph;
+    #####:   76:    if (cipher == NULL) {
+branch  0 never executed (fallthrough)
+branch  1 never executed
+    #####:   77:        (void)ERR_clear_last_mark();
+call    0 never executed
+    #####:   78:        ERR_raise(ERR_LIB_CMS, CMS_R_UNKNOWN_CIPHER);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:   79:        goto err;
+        -:   80:    }
+     2158:   81:    (void)ERR_pop_to_mark();
+call    0 returned 2158
+        -:   82:
+     2158:   83:    if (EVP_CipherInit_ex(ctx, cipher, NULL, NULL, NULL, enc) <= 0) {
+call    0 returned 2158
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2158
+    #####:   84:        ERR_raise(ERR_LIB_CMS, CMS_R_CIPHER_INITIALISATION_ERROR);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:   85:        goto err;
+        -:   86:    }
+        -:   87:
+     2158:   88:    if (enc) {
+branch  0 taken 76 (fallthrough)
+branch  1 taken 2082
+        -:   89:        /*
+        -:   90:         * CFB1 and CFB8 map to the CFB128 OID, which would make a recipient
+        -:   91:         * use a different cipher than the one used for encryption.
+        -:   92:         */
+       76:   93:        if (EVP_CIPHER_CTX_get_mode(ctx) == EVP_CIPH_CFB_MODE
+call    0 returned 76
+call    1 returned 76
+branch  2 taken 14 (fallthrough)
+branch  3 taken 62
+       14:   94:            && EVP_CIPHER_CTX_get_nid(ctx) != EVP_CIPHER_CTX_get_type(ctx)) {
+call    0 returned 14
+call    1 returned 14
+call    2 returned 14
+branch  3 taken 12 (fallthrough)
+branch  4 taken 2
+       12:   95:            ERR_raise(ERR_LIB_CMS, CMS_R_UNSUPPORTED_CONTENT_ENCRYPTION_ALGORITHM);
+call    0 returned 12
+call    1 returned 12
+call    2 returned 12
+       12:   96:            goto err;
+        -:   97:        }
+        -:   98:
+       64:   99:        (void)ERR_set_mark();
+call    0 returned 64
+       64:  100:        calg->algorithm = OBJ_nid2obj(EVP_CIPHER_CTX_get_type(ctx));
+call    0 returned 64
+call    1 returned 64
+call    2 returned 64
+       64:  101:        (void)ERR_pop_to_mark();
+call    0 returned 64
+        -:  102:
+       64:  103:        if (calg->algorithm == NULL || calg->algorithm->nid == NID_undef)
+branch  0 taken 64 (fallthrough)
+branch  1 taken 0
+branch  2 taken 2 (fallthrough)
+branch  3 taken 62
+        2:  104:            calg->algorithm = OBJ_txt2obj(EVP_CIPHER_get0_name(cipher), 0);
+call    0 returned 2
+call    1 returned 2
+        -:  105:
+       64:  106:        if (calg->algorithm == NULL || OBJ_length(calg->algorithm) == 0) {
+branch  0 taken 63 (fallthrough)
+branch  1 taken 1
+call    2 returned 63
+branch  3 taken 1 (fallthrough)
+branch  4 taken 62
+        2:  107:            ERR_raise(ERR_LIB_CMS, CMS_R_UNSUPPORTED_CONTENT_ENCRYPTION_ALGORITHM);
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+        2:  108:            goto err;
+        -:  109:        }
+        -:  110:        /* Generate a random IV if we need one */
+       62:  111:        ivlen = EVP_CIPHER_CTX_get_iv_length(ctx);
+call    0 returned 62
+        -:  112:
+       62:  113:        if (ivlen > 0) {
+branch  0 taken 60 (fallthrough)
+branch  1 taken 2
+       60:  114:            if (RAND_bytes_ex(libctx, iv, ivlen, 0) <= 0)
+call    0 returned 60
+branch  1 taken 0 (fallthrough)
+branch  2 taken 60
+    #####:  115:                goto err;
+        -:  116:            piv = iv;
+        -:  117:        }
+        -:  118:    } else {
+     2082:  119:        if (evp_cipher_asn1_to_param_ex(ctx, calg->parameter, &aparams) <= 0) {
+call    0 returned 2082
+branch  1 taken 2 (fallthrough)
+branch  2 taken 2080
+        2:  120:            ERR_raise(ERR_LIB_CMS, CMS_R_CIPHER_PARAMETER_INITIALISATION_ERROR);
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+        2:  121:            goto err;
+        -:  122:        }
+     2080:  123:        if ((EVP_CIPHER_get_flags(cipher) & EVP_CIPH_FLAG_AEAD_CIPHER)) {
+call    0 returned 2080
+branch  1 taken 24 (fallthrough)
+branch  2 taken 2056
+       24:  124:            if (!auth) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 24
+    #####:  125:                ERR_raise(ERR_LIB_CMS, CMS_R_CIPHER_AEAD_IN_ENVELOPED_DATA);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:  126:                goto err;
+        -:  127:            }
+        -:  128:            piv = aparams.iv;
+        -:  129:
+       24:  130:            if (ec->taglen < 4 || ec->taglen > 16
+branch  0 taken 22 (fallthrough)
+branch  1 taken 2
+       22:  131:                || EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, (int)ec->taglen, ec->tag) <= 0) {
+call    0 returned 22
+branch  1 taken 0 (fallthrough)
+branch  2 taken 22
+        2:  132:                ERR_raise(ERR_LIB_CMS, CMS_R_CIPHER_AEAD_SET_TAG_ERROR);
+call    0 returned 2
+call    1 returned 2
+call    2 returned 2
+        2:  133:                goto err;
+        -:  134:            }
+     2056:  135:        } else if (auth) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 2056
+    #####:  136:            ERR_raise(ERR_LIB_CMS, CMS_R_UNSUPPORTED_CONTENT_ENCRYPTION_ALGORITHM);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:  137:            goto err;
+        -:  138:        }
+        -:  139:    }
+     2140:  140:    len = EVP_CIPHER_CTX_get_key_length(ctx);
+call    0 returned 2140
+     2140:  141:    if (len <= 0)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 2140
+    #####:  142:        goto err;
+     2140:  143:    tkeylen = (size_t)len;
+        -:  144:
+        -:  145:    /* Generate random session key */
+     2140:  146:    if (!enc || !ec->key) {
+branch  0 taken 62 (fallthrough)
+branch  1 taken 2078
+branch  2 taken 56 (fallthrough)
+branch  3 taken 6
+     2134:  147:        tkey = OPENSSL_malloc(tkeylen);
+call    0 returned 2134
+     2134:  148:        if (tkey == NULL)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 2134
+    #####:  149:            goto err;
+     2134:  150:        if (EVP_CIPHER_CTX_rand_key(ctx, tkey) <= 0)
+call    0 returned 2134
+branch  1 taken 0 (fallthrough)
+branch  2 taken 2134
+    #####:  151:            goto err;
+        -:  152:    }
+        -:  153:
+     2140:  154:    if (!ec->key) {
+branch  0 taken 56 (fallthrough)
+branch  1 taken 2084
+       56:  155:        ec->key = tkey;
+       56:  156:        ec->keylen = tkeylen;
+        -:  157:        tkey = NULL;
+       56:  158:        if (enc)
+branch  0 taken 0 (fallthrough)
+branch  1 taken 56
+        -:  159:            keep_key = 1;
+        -:  160:        else
+    #####:  161:            ERR_clear_error();
+call    0 never executed
+        -:  162:    }
+        -:  163:
+     2140:  164:    if (ec->keylen != tkeylen
+branch  0 taken 133 (fallthrough)
+branch  1 taken 2007
+     2007:  165:        && EVP_CIPHER_CTX_set_key_length(ctx, (int)ec->keylen) <= 0) {
+call    0 returned 2007
+branch  1 taken 6
+branch  2 taken 2001 (fallthrough)
+        -:  166:        /* Fail only when this cannot act as an MMA oracle or debug enabled */
+     2001:  167:        if (enc || ec->debug || ec->harderr) {
+branch  0 taken 2001 (fallthrough)
+branch  1 taken 0
+branch  2 taken 2001 (fallthrough)
+branch  3 taken 0
+branch  4 taken 2001 (fallthrough)
+branch  5 taken 0
+     2001:  168:            ERR_raise(ERR_LIB_CMS, CMS_R_INVALID_KEY_LENGTH);
+call    0 returned 2001
+call    1 returned 2001
+call    2 returned 2001
+     2001:  169:            goto err;
+        -:  170:        }
+        -:  171:        /* Use random key */
+    #####:  172:        OPENSSL_clear_free(ec->key, ec->keylen);
+call    0 never executed
+    #####:  173:        ec->key = tkey;
+    #####:  174:        ec->keylen = tkeylen;
+        -:  175:        tkey = NULL;
+    #####:  176:        ERR_clear_error();
+call    0 never executed
+        -:  177:    }
+        -:  178:
+      139:  179:    if (EVP_CipherInit_ex(ctx, NULL, NULL, ec->key, piv, enc) <= 0) {
+call    0 returned 139
+branch  1 taken 0 (fallthrough)
+branch  2 taken 139
+    #####:  180:        ERR_raise(ERR_LIB_CMS, CMS_R_CIPHER_INITIALISATION_ERROR);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:  181:        goto err;
+        -:  182:    }
+      139:  183:    if (enc) {
+branch  0 taken 62 (fallthrough)
+branch  1 taken 77
+       62:  184:        calg->parameter = ASN1_TYPE_new();
+call    0 returned 62
+       62:  185:        if (calg->parameter == NULL) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 62
+    #####:  186:            ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:  187:            goto err;
+        -:  188:        }
+       62:  189:        if ((EVP_CIPHER_get_flags(cipher) & EVP_CIPH_FLAG_AEAD_CIPHER)) {
+call    0 returned 62
+branch  1 taken 15 (fallthrough)
+branch  2 taken 47
+       15:  190:            if (ivlen > EVP_MAX_IV_LENGTH || ivlen < 0) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 15
+    #####:  191:                ERR_raise(ERR_LIB_CMS, ERR_R_EVP_LIB);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:  192:                goto err;
+        -:  193:            }
+       15:  194:            if (ivlen != 0)
+branch  0 taken 15 (fallthrough)
+branch  1 taken 0
+       15:  195:                memcpy(aparams.iv, piv, ivlen);
+       15:  196:            aparams.iv_len = ivlen;
+       15:  197:            aparams.tag_len = EVP_CIPHER_CTX_get_tag_length(ctx);
+call    0 returned 15
+       15:  198:            if (aparams.tag_len <= 0) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 15
+    #####:  199:                ASN1_TYPE_free(calg->parameter);
+call    0 never executed
+    #####:  200:                calg->parameter = NULL;
+    #####:  201:                goto err;
+        -:  202:            }
+        -:  203:        }
+        -:  204:
+       62:  205:        if (evp_cipher_param_to_asn1_ex(ctx, calg->parameter, &aparams) <= 0) {
+call    0 returned 62
+branch  1 taken 0 (fallthrough)
+branch  2 taken 62
+    #####:  206:            ERR_raise(ERR_LIB_CMS, CMS_R_CIPHER_PARAMETER_INITIALISATION_ERROR);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:  207:            ASN1_TYPE_free(calg->parameter);
+call    0 never executed
+    #####:  208:            calg->parameter = NULL;
+    #####:  209:            goto err;
+        -:  210:        }
+        -:  211:        /* If parameter type not set omit parameter */
+       62:  212:        if (calg->parameter->type == V_ASN1_UNDEF) {
+branch  0 taken 62 (fallthrough)
+branch  1 taken 0
+    #####:  213:            ASN1_TYPE_free(calg->parameter);
+call    0 never executed
+    #####:  214:            calg->parameter = NULL;
+        -:  215:        }
+        -:  216:    }
+        -:  217:    ok = 1;
+        -:  218:
+     2158:  219:err:
+     2158:  220:    EVP_CIPHER_free(fetched_ciph);
+call    0 returned 2158
+     2158:  221:    if (!keep_key || !ok) {
+branch  0 taken 2102 (fallthrough)
+branch  1 taken 56
+     2102:  222:        OPENSSL_clear_free(ec->key, ec->keylen);
+call    0 returned 2102
+     2102:  223:        ec->key = NULL;
+        -:  224:    }
+     2158:  225:    OPENSSL_clear_free(tkey, tkeylen);
+call    0 returned 2158
+     2158:  226:    if (ok)
+branch  0 taken 2019 (fallthrough)
+branch  1 taken 139
+        -:  227:        return b;
+     2019:  228:    BIO_free(b);
+call    0 returned 2019
+     2019:  229:    return NULL;
+        -:  230:}
+        -:  231:
+function ossl_cms_EncryptedContent_init called 87 returned 100% blocks executed 100%
+       87:  232:int ossl_cms_EncryptedContent_init(CMS_EncryptedContentInfo *ec,
+        -:  233:    const EVP_CIPHER *cipher,
+        -:  234:    const unsigned char *key, size_t keylen,
+        -:  235:    const CMS_CTX *cms_ctx)
+        -:  236:{
+       87:  237:    ec->cipher = cipher;
+       87:  238:    if (key) {
+branch  0 taken 17 (fallthrough)
+branch  1 taken 70
+       17:  239:        if ((ec->key = OPENSSL_malloc(keylen)) == NULL)
+call    0 returned 17
+branch  1 taken 17 (fallthrough)
+branch  2 taken 0
+        -:  240:            return 0;
+        -:  241:        memcpy(ec->key, key, keylen);
+        -:  242:    }
+       87:  243:    ec->keylen = keylen;
+       87:  244:    if (cipher != NULL)
+branch  0 taken 81 (fallthrough)
+branch  1 taken 6
+       81:  245:        ec->contentType = OBJ_nid2obj(NID_pkcs7_data);
+call    0 returned 81
+        -:  246:    return 1;
+        -:  247:}
+        -:  248:
+function CMS_EncryptedData_set1_key called 21 returned 100% blocks executed 66%
+       21:  249:int CMS_EncryptedData_set1_key(CMS_ContentInfo *cms, const EVP_CIPHER *ciph,
+        -:  250:    const unsigned char *key, size_t keylen)
+        -:  251:{
+        -:  252:    CMS_EncryptedContentInfo *ec;
+        -:  253:
+       21:  254:    if (!key || !keylen) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 21
+    #####:  255:        ERR_raise(ERR_LIB_CMS, CMS_R_NO_KEY);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:  256:        return 0;
+        -:  257:    }
+       21:  258:    if (ciph) {
+branch  0 taken 15 (fallthrough)
+branch  1 taken 6
+       15:  259:        if ((EVP_CIPHER_get_flags(ciph) & EVP_CIPH_FLAG_AEAD_CIPHER) != 0) {
+call    0 returned 15
+branch  1 taken 4 (fallthrough)
+branch  2 taken 11
+        4:  260:            ERR_raise(ERR_LIB_CMS, CMS_R_UNSUPPORTED_CONTENT_ENCRYPTION_ALGORITHM);
+call    0 returned 4
+call    1 returned 4
+call    2 returned 4
+        4:  261:            return 0;
+        -:  262:        }
+       11:  263:        if (cms->d.encryptedData != NULL) {
+branch  0 taken 2 (fallthrough)
+branch  1 taken 9
+        2:  264:            M_ASN1_free_of(cms->d.encryptedData, CMS_EncryptedData);
+call    0 returned 2
+call    1 returned 2
+        2:  265:            cms->d.encryptedData = NULL;
+        -:  266:        }
+       11:  267:        cms->d.encryptedData = M_ASN1_new_of(CMS_EncryptedData);
+call    0 returned 11
+call    1 returned 11
+       11:  268:        if (!cms->d.encryptedData) {
+branch  0 taken 0 (fallthrough)
+branch  1 taken 11
+    #####:  269:            ERR_raise(ERR_LIB_CMS, ERR_R_ASN1_LIB);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:  270:            return 0;
+        -:  271:        }
+       11:  272:        cms->contentType = OBJ_nid2obj(NID_pkcs7_encrypted);
+call    0 returned 11
+       11:  273:        cms->d.encryptedData->version = 0;
+        6:  274:    } else if (OBJ_obj2nid(cms->contentType) != NID_pkcs7_encrypted) {
+call    0 returned 6
+branch  1 taken 0 (fallthrough)
+branch  2 taken 6
+    #####:  275:        ERR_raise(ERR_LIB_CMS, CMS_R_NOT_ENCRYPTED_DATA);
+call    0 never executed
+call    1 never executed
+call    2 never executed
+    #####:  276:        return 0;
+        -:  277:    }
+       17:  278:    ec = cms->d.encryptedData->encryptedContentInfo;
+       17:  279:    return ossl_cms_EncryptedContent_init(ec, ciph, key, keylen,
+call    0 returned 17
+call    1 returned 17
+        -:  280:        ossl_cms_get0_cmsctx(cms));
+        -:  281:}
+        -:  282:
+function ossl_cms_EncryptedData_init_bio called 12 returned 100% blocks executed 83%
+       12:  283:BIO *ossl_cms_EncryptedData_init_bio(const CMS_ContentInfo *cms)
+        -:  284:{
+       12:  285:    CMS_EncryptedData *enc = cms->d.encryptedData;
+        -:  286:
+       12:  287:    if (enc->encryptedContentInfo->cipher && enc->unprotectedAttrs)
+branch  0 taken 6 (fallthrough)
+branch  1 taken 6
+branch  2 taken 0 (fallthrough)
+branch  3 taken 6
+    #####:  288:        enc->version = 2;
+       12:  289:    return ossl_cms_EncryptedContent_init_bio(enc->encryptedContentInfo,
+call    0 returned 12
+call    1 returned 12
+        -:  290:        ossl_cms_get0_cmsctx(cms), 0);
+        -:  291:}

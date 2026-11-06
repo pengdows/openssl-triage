@@ -1,0 +1,24 @@
+{
+  "id": "33537",
+  "repository": "openssl/openssl",
+  "issue": 33537,
+  "issueUrl": "https://github.com/openssl/openssl/issues/33537",
+  "title": "CMS_encrypt mislabels AES CFB1/CFB8",
+  "status": "open-as-checked-2026-11-05",
+  "claim": "CMS_encrypt accepts AES-CFB1 and AES-CFB8, records the AES-CFB128 OID, then CMS_decrypt reports success but returns bytes that differ from the plaintext.",
+  "revisions": {
+    "reported": {
+      "commit": "fd41cfc4a1403b74c0541f19cf0d9762aa29124c",
+      "url": "https://github.com/openssl/openssl/tree/fd41cfc4a1403b74c0541f19cf0d9762aa29124c"
+    },
+    "current": {
+      "commit": "8ba9860b555e35f6bdfaf80eeaa087e65fdcca11",
+      "url": "https://github.com/openssl/openssl/tree/8ba9860b555e35f6bdfaf80eeaa087e65fdcca11"
+    }
+  },
+  "notes": [
+    "Issue was open, had no comments, and showed no linked pull request when checked on 2026-11-05.",
+    "The report contains LLM-generated root-cause and fix sections; this case uses only its reproducer and independently checks observed behavior.",
+    "This is a correctness/API behavior report, not a newly discovered security vulnerability."
+  ]
+}

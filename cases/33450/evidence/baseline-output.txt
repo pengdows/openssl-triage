@@ -1,0 +1,13 @@
+calling EC_GROUP_cmp()
+crypto/ec/ec_local.h:335:34: runtime error: member access within null pointer of type 'const EC_POINT' (aka 'const struct ec_point_st')
+==7178==WARNING: invalid path to external symbolizer!
+==7178==WARNING: Failed to use and restart external symbolizer!
+    #0 0x5c01ae883583  (/tmp/ec-group-cmp-baseline+0x9a9583) (BuildId: 88babb0c8f8238c8044e68cf2b5f42868d6fb4f4)
+    #1 0x5c01ae882aa0  (/tmp/ec-group-cmp-baseline+0x9a8aa0) (BuildId: 88babb0c8f8238c8044e68cf2b5f42868d6fb4f4)
+    #2 0x5c01ae88274c  (/tmp/ec-group-cmp-baseline+0x9a874c) (BuildId: 88babb0c8f8238c8044e68cf2b5f42868d6fb4f4)
+    #3 0x5c01ae841cfe  (/tmp/ec-group-cmp-baseline+0x967cfe) (BuildId: 88babb0c8f8238c8044e68cf2b5f42868d6fb4f4)
+    #4 0x72aed59441c9  (/lib/x86_64-linux-gnu/libc.so.6+0x2a1c9) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+    #5 0x72aed594428a  (/lib/x86_64-linux-gnu/libc.so.6+0x2a28a) (BuildId: a4a7992a8e66555c8141ab2a08a8465ff6e0ea65)
+    #6 0x5c01ae768764  (/tmp/ec-group-cmp-baseline+0x88e764) (BuildId: 88babb0c8f8238c8044e68cf2b5f42868d6fb4f4)
+
+SUMMARY: UndefinedBehaviorSanitizer: undefined-behavior crypto/ec/ec_local.h:335:34 
