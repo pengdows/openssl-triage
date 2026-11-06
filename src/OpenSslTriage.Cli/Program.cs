@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 
 const string usage = "Usage: openssl-triage <list|inspect|report> [case-id] [--output path]";
@@ -19,11 +20,11 @@ if (root is null)
 
 if (command == "list")
 {
-    foreach (var path in Directory.EnumerateFiles(root, "case.json", SearchOption.AllDirectories).Order())
+    foreach (var path in EnumerateCaseManifests(root))
     {
         using var doc = JsonDocument.Parse(File.ReadAllText(path));
         var item = doc.RootElement;
-        Console.WriteLine($"{item.GetProperty("id").GetString()}\t{item.GetProperty("title").GetString()}");
+        Console.WriteLine($"{TerminalText(item.GetProperty("id").GetString())}\t{TerminalText(item.GetProperty("title").GetString())}");
     }
     return;
 }
@@ -35,7 +36,31 @@ if (args.Length < 2 || command is not ("inspect" or "report"))
     return;
 }
 
-var casePath = Path.Combine(root, args[1], "case.json");
+if (args[1].Length == 0 || !args[1].All(char.IsAsciiDigit))
+{
+    Console.Error.WriteLine("Invalid case ID. Case IDs must contain only ASCII digits.");
+    Environment.ExitCode = 2;
+    return;
+}
+
+var casesRoot = ResolvePath(new DirectoryInfo(root));
+var caseDirectory = Path.GetFullPath(Path.Combine(casesRoot, args[1]));
+if (!Directory.Exists(caseDirectory))
+{
+    Console.Error.WriteLine($"Unknown case '{args[1]}'.");
+    Environment.ExitCode = 2;
+    return;
+}
+
+var resolvedCaseDirectory = ResolvePath(new DirectoryInfo(caseDirectory));
+if (!IsWithinDirectory(casesRoot, resolvedCaseDirectory))
+{
+    Console.Error.WriteLine("Case path must remain inside the cases/ directory.");
+    Environment.ExitCode = 2;
+    return;
+}
+
+var casePath = Path.Combine(resolvedCaseDirectory, "case.json");
 if (!File.Exists(casePath))
 {
     Console.Error.WriteLine($"Unknown case '{args[1]}'.");
@@ -43,8 +68,22 @@ if (!File.Exists(casePath))
     return;
 }
 
-using var caseDocument = JsonDocument.Parse(File.ReadAllText(casePath));
+var resolvedCasePath = ResolvePath(new FileInfo(casePath));
+if (!IsWithinDirectory(casesRoot, resolvedCasePath))
+{
+    Console.Error.WriteLine("Case manifest must remain inside the cases/ directory.");
+    Environment.ExitCode = 2;
+    return;
+}
+
+using var caseDocument = JsonDocument.Parse(File.ReadAllText(resolvedCasePath));
 var json = caseDocument.RootElement;
+if (!string.Equals(json.GetProperty("id").GetString(), args[1], StringComparison.Ordinal))
+{
+    Console.Error.WriteLine("Case ID does not match the case manifest.");
+    Environment.ExitCode = 2;
+    return;
+}
 if (command == "inspect")
 {
     Console.WriteLine(JsonSerializer.Serialize(json, new JsonSerializerOptions { WriteIndented = true }));
@@ -54,13 +93,13 @@ if (command == "inspect")
 var outputFlag = Array.IndexOf(args, "--output");
 var outputPath = outputFlag >= 0 && outputFlag + 1 < args.Length
     ? Path.GetFullPath(args[outputFlag + 1])
-    : Path.Combine(Path.GetDirectoryName(casePath)!, "evidence-report.md");
+    : Path.Combine(resolvedCaseDirectory, "evidence-report.md");
 var report = json.GetProperty("id").GetString() == "32897"
-    ? BuildReport(json, Path.GetDirectoryName(casePath)!)
-    : BuildGeneralReport(json, Path.GetDirectoryName(casePath)!);
+    ? BuildReport(json, resolvedCaseDirectory)
+    : BuildGeneralReport(json, resolvedCaseDirectory);
 Directory.CreateDirectory(Path.GetDirectoryName(outputPath)!);
 File.WriteAllText(outputPath, report);
-Console.WriteLine($"Wrote {outputPath}");
+Console.WriteLine($"Wrote {TerminalText(outputPath)}");
 
 static string? FindCasesDirectory()
 {
@@ -70,6 +109,142 @@ static string? FindCasesDirectory()
         if (Directory.Exists(candidate)) return candidate;
     }
     return null;
+}
+
+static IEnumerable<string> EnumerateCaseManifests(string root)
+{
+    var casesRoot = ResolvePath(new DirectoryInfo(root));
+    foreach (var directory in Directory.EnumerateDirectories(casesRoot).Order(StringComparer.Ordinal))
+    {
+        var caseId = Path.GetFileName(directory);
+        if (caseId.Length == 0 || !caseId.All(char.IsAsciiDigit))
+        {
+            continue;
+        }
+
+        var resolvedDirectory = ResolvePath(new DirectoryInfo(directory));
+        if (!IsWithinDirectory(casesRoot, resolvedDirectory))
+        {
+            Console.Error.WriteLine($"Skipping case directory outside cases/: {caseId}");
+            continue;
+        }
+
+        var manifest = Path.Combine(resolvedDirectory, "case.json");
+        if (!File.Exists(manifest))
+        {
+            continue;
+        }
+
+        var resolvedManifest = ResolvePath(new FileInfo(manifest));
+        if (!IsWithinDirectory(casesRoot, resolvedManifest))
+        {
+            Console.Error.WriteLine($"Skipping case manifest outside cases/: {caseId}");
+            continue;
+        }
+
+        yield return resolvedManifest;
+    }
+}
+
+static string TerminalText(string? value)
+{
+    var builder = new StringBuilder(value?.Length ?? 0);
+    foreach (var character in value ?? "")
+    {
+        builder.Append(char.IsControl(character) ? ' ' : character);
+    }
+
+    return builder.ToString();
+}
+
+static string ResolvePath(FileSystemInfo path)
+{
+    var fullPath = Path.GetFullPath(path.FullName);
+    if ((path.Attributes & FileAttributes.ReparsePoint) == 0)
+    {
+        return fullPath;
+    }
+
+    return path.ResolveLinkTarget(returnFinalTarget: true)?.FullName ?? fullPath;
+}
+
+static bool IsWithinDirectory(string directory, string path)
+{
+    var relativePath = Path.GetRelativePath(directory, path);
+    return relativePath != "."
+        && !Path.IsPathRooted(relativePath)
+        && relativePath != ".."
+        && !relativePath.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+        && !relativePath.StartsWith($"..{Path.AltDirectorySeparatorChar}", StringComparison.Ordinal);
+}
+
+static string MarkdownText(string? value)
+{
+    var normalized = (value ?? "").Replace("\r\n", " ").Replace('\r', ' ').Replace('\n', ' ');
+    var builder = new StringBuilder(normalized.Length * 2);
+    foreach (var character in normalized)
+    {
+        if (IsAsciiPunctuation(character))
+        {
+            builder.Append('\\');
+        }
+
+        builder.Append(character);
+    }
+
+    return builder.ToString();
+}
+
+static bool IsAsciiPunctuation(char character)
+{
+    return character is (>= '!' and <= '/')
+        or (>= ':' and <= '@')
+        or (>= '[' and <= '`')
+        or (>= '{' and <= '~');
+}
+
+static string MarkdownLink(string? label, string? value)
+{
+    if (!Uri.TryCreate(value, UriKind.Absolute, out var uri)
+        || uri.Scheme != Uri.UriSchemeHttps
+        || string.IsNullOrWhiteSpace(uri.Host)
+        || uri.UserInfo.Length != 0)
+    {
+        return MarkdownText(label);
+    }
+
+    var safeUri = uri.GetComponents(UriComponents.AbsoluteUri, UriFormat.UriEscaped);
+    return $"[{MarkdownText(label)}](<{safeUri}>)";
+}
+
+static string InlineCode(string? value)
+{
+    var content = value ?? "";
+    var delimiter = new string('`', Math.Max(1, LongestRun(content, '`') + 1));
+    var padding = content.StartsWith('`') || content.EndsWith('`') || content.StartsWith(' ') || content.EndsWith(' ')
+        ? " "
+        : "";
+    return $"{delimiter}{padding}{content}{padding}{delimiter}";
+}
+
+static string CodeBlock(string? value)
+{
+    var content = value ?? "";
+    var delimiter = new string('`', Math.Max(3, LongestRun(content, '`') + 1));
+    return $"{delimiter}text{Environment.NewLine}{content}{Environment.NewLine}{delimiter}";
+}
+
+static int LongestRun(string value, char character)
+{
+    var longest = 0;
+    var current = 0;
+    foreach (var item in value)
+    {
+        current = item == character ? current + 1 : 0;
+        longest = Math.Max(longest, current);
+    }
+
+    return longest;
 }
 
 static string BuildReport(JsonElement item, string caseDirectory)
@@ -88,47 +263,45 @@ static string BuildReport(JsonElement item, string caseDirectory)
     if (string.IsNullOrWhiteSpace(environment)) environment = "Not run.";
     var observedRuns = ReadRuntimeSummary(Path.Combine(evidenceDirectory, "reported.log"), Path.Combine(evidenceDirectory, "fixed.log"));
     var verdict = reportedCallback is not null && fixedCallback is not null
-        ? $"Direct calls to the actual callback returned `{reportedCallback}` on the reported revision and `{fixedCallback}` on the fixed revision for identical 16-byte input."
+        ? $"Direct calls to the actual callback returned {InlineCode(reportedCallback)} on the reported revision and {InlineCode(fixedCallback)} on the fixed revision for identical 16-byte input."
         : "Not independently reproduced by this project.";
     return $"""
-# Case {Value("id")}: {Value("title")}
+# Case {MarkdownText(Value("id"))}: {MarkdownText(Value("title"))}
 
-**Triage status:** {Value("status")}  
-**Evidence status:** {(reportedCallback is not null && fixedCallback is not null ? "Reproduced across pinned revisions" : "Not independently reproduced by this project")}  
-**Issue:** {Value("issueUrl")}
+**Triage status:** {MarkdownText(Value("status"))}
+**Evidence status:** {(reportedCallback is not null && fixedCallback is not null ? "Reproduced across pinned revisions" : "Not independently reproduced by this project")}
+**Issue:** {MarkdownLink("Open issue", Value("issueUrl"))}
 
 ## Claim
 
-{Value("claim")}
+{MarkdownText(Value("claim"))}
 
 ## Contract reference
 
-{Value("contract")}
+{MarkdownLink(Value("contract"), Value("contract"))}
 
 ## Revision anchors
 
-- Reported source: [`{source.GetProperty("commit").GetString()}`]({source.GetProperty("url").GetString()})
-- Upstream fix: [`{fixedRevision.GetProperty("commit").GetString()}`]({fixedRevision.GetProperty("url").GetString()})
+- Reported source: {MarkdownLink(source.GetProperty("commit").GetString(), source.GetProperty("url").GetString())}
+- Upstream fix: {MarkdownLink(fixedRevision.GetProperty("commit").GetString(), fixedRevision.GetProperty("url").GetString())}
 
 ## Evidence collected
 
 {verdict}
 
-- Reported revision callback: `{reportedCallback ?? "not run"}`
-- Fixed revision callback: `{fixedCallback ?? "not run"}`
+- Reported revision callback: {InlineCode(reportedCallback ?? "not run")}
+- Fixed revision callback: {InlineCode(fixedCallback ?? "not run")}
 - 16-byte input SHA-256: `374708fff7719dd5979ec875d56cd2286f6d3cf7ec317a3b25632aab28ec37bb`
-- libFuzzer run summaries: {observedRuns}
+- libFuzzer run summaries: {InlineCode(observedRuns)}
 - Container/toolchain:
 
-```text
-{environment}
-```
+{CodeBlock(environment)}
 
 The upstream fix commit also states that nonzero returns discard input and changes this callback to always return `0`. The direct probe and libFuzzer behavior above are observations collected by this project.
 
 ## Reproduction
 
-Re-run with `bash cases/{Value("id")}/reproduce.sh`. The script fetches the pinned source commits, creates the 16-byte input, builds in Docker, then executes with container networking disabled and CPU, memory, process, and capability limits.
+Re-run with {InlineCode($"bash cases/{Value("id")}/reproduce.sh")}. The script fetches the pinned source commits, creates the 16-byte input, builds in Docker, then executes with container networking disabled and CPU, memory, process, and capability limits.
 
 ## Assessment
 
@@ -167,21 +340,21 @@ static string BuildGeneralReport(JsonElement item, string caseDirectory)
     var reproduced = reported.Contains("AES-128-CFB8") && reported.Contains("equal=no")
         && current.Contains("AES-128-CFB8") && current.Contains("equal=no");
     var revisions = item.GetProperty("revisions").EnumerateObject()
-        .Select(revision => $"- {revision.Name}: [`{revision.Value.GetProperty("commit").GetString()}`]({revision.Value.GetProperty("url").GetString()})");
+        .Select(revision => $"- {MarkdownText(revision.Name)}: {MarkdownLink(revision.Value.GetProperty("commit").GetString(), revision.Value.GetProperty("url").GetString())}");
     var environmentPaths = new[] { "environment.txt", "source-archives.sha256", "reproducer.sha256", "container-image.txt" }
         .Select(name => Path.Combine(evidenceDirectory, name)).Where(File.Exists);
     var environment = string.Join(Environment.NewLine, environmentPaths.Select(path => File.ReadAllText(path).Trim()));
 
     return $"""
-# Case {Value("id")}: {Value("title")}
+# Case {MarkdownText(Value("id"))}: {MarkdownText(Value("title"))}
 
-**Issue status:** {Value("status")}  
-**Evidence status:** {(reproduced ? "Reproduced on both pinned revisions" : "Not yet reproduced")}  
-**Issue:** {Value("issueUrl")}
+**Issue status:** {MarkdownText(Value("status"))}
+**Evidence status:** {(reproduced ? "Reproduced on both pinned revisions" : "Not yet reproduced")}
+**Issue:** {MarkdownLink("Open issue", Value("issueUrl"))}
 
 ## Claim
 
-{Value("claim")}
+{MarkdownText(Value("claim"))}
 
 ## Revisions
 
@@ -193,25 +366,19 @@ The public C reproducer supplied in the issue was run unchanged against both rev
 
 Reported revision:
 
-```text
-{reported}
-```
+{CodeBlock(reported)}
 
 Current revision:
 
-```text
-{current}
-```
+{CodeBlock(current)}
 
 ## Toolchain and checksums
 
-```text
-{(string.IsNullOrWhiteSpace(environment) ? "Not run." : environment)}
-```
+{CodeBlock(string.IsNullOrWhiteSpace(environment) ? "Not run." : environment)}
 
 ## Reproduction
 
-Re-run with `bash cases/{Value("id")}/reproduce.sh`. The source builds and executes in a network-disabled Docker container with CPU, memory, process, and capability limits.
+Re-run with {InlineCode($"bash cases/{Value("id")}/reproduce.sh")}. The source builds and executes in a network-disabled Docker container with CPU, memory, process, and capability limits.
 
 """;
 }

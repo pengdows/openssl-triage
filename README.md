@@ -16,6 +16,8 @@ dotnet run --project src/OpenSslTriage.Cli -- inspect 32897
 dotnet run --project src/OpenSslTriage.Cli -- report 32897
 ```
 
+Run the CLI regression and security tests with `dotnet test tests/OpenSslTriage.Cli.Tests`. They cover path confinement, symlink escapes, report markup/link handling, and Docker build-context allowlists.
+
 `report` writes `cases/<id>/evidence-report.md`; pass `--output <path>` to choose another location.
 
 ## Reproduce #32897
